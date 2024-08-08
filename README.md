@@ -1,70 +1,92 @@
-# Getting Started with Create React App
+# 3D Volume Viewer Application
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This application is a 3D volume viewer designed to visualize medical imaging data of mouse body parts. The frontend is built with React and communicates with a Node.js backend that serves the volume files. Users can select different body parts and view the corresponding 3D volume files.
 
-## Available Scripts
+## Table of Contents
 
-In the project directory, you can run:
+1. [Features](#features)
+2. [Installation](#installation)
+3. [Usage](#usage)
+4. [File Structure](#file-structure)
+5. [API Endpoints](#api-endpoints)
+6. [Technologies Used](#technologies-used)
+7. [Contributing](#contributing)
+8. [License](#license)
 
-### `npm start`
+## Features
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- Visualize 3D volume data in various formats (OME-TIFF, OME-ZARR, TIFF).
+- Control rendering modes (Path Trace, Ray March).
+- Adjust visualization parameters such as density, exposure, and gamma.
+- Manipulate lighting settings and camera modes.
+- Playback functionality for time-series data.
+- Dynamic channel controls to adjust color and material properties.
+- Set clipping regions and view bounding boxes.
+- Flip volume along different axes.
+- Screenshot capturing functionality.
+- RESTful API for serving volume files.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Installation
 
-### `npm test`
+### Prerequisites
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+- Node.js (v12 or later)
+- npm (v6 or later)
 
-### `npm run build`
+### Backend Setup
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+1. Clone the repository:
+    ```bash
+    git clone https://github.com/yourusername/3d-volume-viewer.git
+    cd 3d-volume-viewer
+    ```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+2. Navigate to the backend directory:
+    ```bash
+    cd server
+    ```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+3. Install dependencies:
+    ```bash
+    npm install
+    ```
 
-### `npm run eject`
+4. Start the server:
+    ```bash
+    npm start
+    ```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### Frontend Setup
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+1. Navigate to the frontend directory:
+    ```bash
+    cd ../client
+    ```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+2. Install dependencies:
+    ```bash
+    npm install
+    ```
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+3. Start the development server:
+    ```bash
+    npm start
+    ```
 
-## Learn More
+4. Open your browser and navigate to `http://localhost:3000`.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## Usage
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### Upload Files
 
-### Code Splitting
+1. Place your volume files in the appropriate directories under `server/uploads`. Each directory represents a different body part (e.g., `liver`, `brain`).
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+### View and Manipulate Volumes
 
-### Analyzing the Bundle Size
+1. Use the file selector in the frontend to choose a body part and a specific volume file.
+2. Adjust rendering and visualization settings using the provided controls.
+3. Use playback controls to navigate through time-series data.
+4. Capture screenshots using the screenshot button.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+## File Structure
 
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
