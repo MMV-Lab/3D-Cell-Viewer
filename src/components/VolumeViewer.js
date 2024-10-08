@@ -12,15 +12,13 @@ import {
     Lut
 } from "@aics/volume-viewer";
 import * as THREE from 'three';
-import { TEST_DATA, loaderContext, PREFETCH_DISTANCE, MAX_PREFETCH_CHUNKS, myState } from "./appConfig";
+import { loaderContext, PREFETCH_DISTANCE, MAX_PREFETCH_CHUNKS, myState } from "./appConfig";
 import { useConstructor } from './useConstructor';
-import { Slider, Switch, InputNumber, Row, Col, Collapse, Layout, Button, Select, Input, Tooltip } from 'antd';
+import { Slider, Switch, InputNumber, Row, Col, Collapse, Layout, Button, Select, Input, Tooltip, Spin } from 'antd';
+import axios from 'axios';
+import { API_URL } from '../config';  // Importing API_URL from your config
 
-const { Sider, Content } = Layout;
-const { Panel } = Collapse;
-const { Option } = Select;
-const { Vector3 } = THREE;
-
+// Utility function to concatenate arrays
 const concatenateArrays = (arrays) => {
     const totalLength = arrays.reduce((acc, arr) => acc + arr.length, 0);
     const result = new Uint8Array(totalLength);
@@ -30,70 +28,23 @@ const concatenateArrays = (arrays) => {
         offset += arr.length;
     }
     return result;
-};
+}
 
-const createTestVolume = () => {
-    const sizeX = 64;
-    const sizeY = 64;
-    const sizeZ = 64;
-    const imgData = {
-        name: "AICS-10_5_5",
-        sizeX,
-        sizeY,
-        sizeZ,
-        sizeC: 3,
-        physicalPixelSize: [1, 1, 1],
-        spatialUnit: "",
-        channelNames: ["DRAQ5", "EGFP", "SEG_Memb"],
-    };
+const { Sider, Content } = Layout;
+const { Panel } = Collapse;
+const { Option } = Select;
+const { Vector3 } = THREE;
 
-    const channelVolumes = [
-        VolumeMaker.createSphere(sizeX, sizeY, sizeZ, 24),
-        VolumeMaker.createTorus(sizeX, sizeY, sizeZ, 24, 8),
-        VolumeMaker.createCone(sizeX, sizeY, sizeZ, 24, 24),
-    ];
-    const alldata = concatenateArrays(channelVolumes);
-    return {
-        metadata: imgData,
-        data: {
-            dtype: "uint8",
-            shape: [channelVolumes.length, sizeZ, sizeY, sizeX],
-            buffer: new DataView(alldata.buffer),
-        },
-    };
-};
-
-const createLoader = async (data, loadContext) => {
-    console.log("Creating loader context...");
-    await loadContext.onOpen();
-    console.log("Loader context opened.");
-
-    const options = {};
-    let path = data.url;
-    if (data.type === VolumeFileFormat.JSON) {
-        path = [];
-        const times = data.times || 0;
-        for (let t = 0; t <= times; t++) {
-            path.push(data.url.replace("%%", t.toString()));
-        }
-    } else if (data.type === VolumeFileFormat.DATA) {
-        const volumeInfo = createTestVolume();
-        options.fileType = VolumeFileFormat.DATA;
-        options.rawArrayOptions = { data: volumeInfo.data, metadata: volumeInfo.metadata };
-    }
-    const loader = await loadContext.createLoader(path, {
-        ...options,
-        fetchOptions: { maxPrefetchDistance: PREFETCH_DISTANCE, maxPrefetchChunks: MAX_PREFETCH_CHUNKS },
-    });
-    console.log("Loader created.");
-    return loader;
-};
-
-function App() {
+const VolumeViewer = () => {
     const viewerRef = useRef(null);
     const view3D = useConstructor(() => new View3d({ parentElement: viewerRef.current }));
     const loadContext = useConstructor(() => loaderContext);
+
     const [loader, setLoader] = useState(null);
+    const [fileData, setFileData] = useState({});
+    const [selectedBodyPart, setSelectedBodyPart] = useState(null);
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [currentVolume, setCurrentVolume] = useState(null);
     const [density, setDensity] = useState(myState.density);
     const [exposure, setExposure] = useState(myState.exposure);
     const [lights, setLights] = useState([
@@ -102,7 +53,6 @@ function App() {
     ]);
     const [isPT, setIsPT] = useState(myState.isPT);
     const [channels, setChannels] = useState([]);
-    const [currentVolume, setCurrentVolume] = useState(null);
     const [cameraMode, setCameraMode] = useState('3D');
     const [isTurntable, setIsTurntable] = useState(false);
     const [showAxis, setShowAxis] = useState(false);
@@ -126,6 +76,7 @@ function App() {
     const [currentFrame, setCurrentFrame] = useState(0);
     const [totalFrames, setTotalFrames] = useState(0);
     const [timerId, setTimerId] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
 
     const densitySliderToView3D = (density) => density / 50.0;
 
@@ -162,49 +113,101 @@ function App() {
         await loader.loadVolumeData(volume);
     };
 
-    const loadTestData = async (testdata) => {
-        const loader = await createLoader(testdata, loadContext);
-        setLoader(loader);
-        const loadSpec = new LoadSpec();
-        myState.totalFrames = testdata.times;
-        setTotalFrames(testdata.times);
-        await loadVolume(loadSpec, loader);
+    const loadVolumeFromServer = async (url) => {
+        setIsLoading(true);
+        try {
+            const loadSpec = new LoadSpec();
+            const fileExtension = url.split('.').pop();
+            console.log(fileExtension)
+            const volumeFileType = (fileExtension === 'tiff' || fileExtension === 'tif' || fileExtension === 'ome.tiff' || fileExtension === 'ome.tif') ? VolumeFileFormat.TIFF : VolumeFileFormat.ZARR;
+            console.log(volumeFileType)
+            const loader = await loadContext.createLoader(url, {
+                fileType: volumeFileType,
+                fetchOptions: { maxPrefetchDistance: PREFETCH_DISTANCE, maxPrefetchChunks: MAX_PREFETCH_CHUNKS },
+            });
+
+            setLoader(loader);
+            await loadVolume(loadSpec, loader);
+        } catch (error) {
+            console.error('Error loading volume:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+
+    const createTestVolume = () => {
+        const sizeX = 64;
+        const sizeY = 64;
+        const sizeZ = 64;
+        const imgData = {
+            name: "AICS-10_5_5",
+            sizeX,
+            sizeY,
+            sizeZ,
+            sizeC: 3,
+            physicalPixelSize: [1, 1, 1],
+            spatialUnit: "",
+            channelNames: ["DRAQ5", "EGFP", "SEG_Memb"],
+        };
+
+        const channelVolumes = [
+            VolumeMaker.createSphere(sizeX, sizeY, sizeZ, 24),
+            VolumeMaker.createTorus(sizeX, sizeY, sizeZ, 24, 8),
+            VolumeMaker.createCone(sizeX, sizeY, sizeZ, 24, 24),
+        ];
+
+        const alldata = concatenateArrays(channelVolumes);
+        return {
+            metadata: imgData,
+            data: {
+                dtype: "uint8",
+                shape: [channelVolumes.length, sizeZ, sizeY, sizeX],
+                buffer: new DataView(alldata.buffer),
+            },
+        };
+    };
+
+    const fetchFiles = async () => {
+        try {
+            const response = await axios.get(`${API_URL}/files`);
+            setFileData(response.data);
+        } catch (error) {
+            console.error('Error fetching files:', error);
+        }
+    };
+
+    const handleFileSelect = async (bodyPart, file) => {
+        setSelectedBodyPart(bodyPart);
+        setSelectedFile(file);
+        await loadVolumeFromServer(`${API_URL}/${bodyPart}/${file}`);
     };
 
     useEffect(() => {
+        fetchFiles();
+    }, []);
+
+    useEffect(() => {
         if (viewerRef.current) {
-            (async () => {
-                try {
-                    await loadTestData(TEST_DATA['timeSeries']);
+            const container = viewerRef.current;
+            container.appendChild(view3D.getDOMElement());
 
-                    const container = viewerRef.current;
-                    container.appendChild(view3D.getDOMElement());
+            const handleResize = () => view3D.resize();
+            window.addEventListener("resize", handleResize);
 
-                    const handleResize = () => {
-                        view3D.resize();
-                    };
+            view3D.resize();
 
-                    window.addEventListener("resize", handleResize);
-
-                    // Force a resize event after a slight delay
-                    setTimeout(() => {
-                        handleResize();
-                    }, 100);
-
-                    return () => {
-                        window.removeEventListener("resize", handleResize);
-                        if (view3D.getDOMElement().parentNode) {
-                            view3D.getDOMElement().parentNode.removeChild(view3D.getDOMElement());
-                        }
-                        view3D.removeAllVolumes();
-                    };
-                } catch (error) {
-                    console.error("Error during initialization:", error);
+            return () => {
+                window.removeEventListener("resize", handleResize);
+                if (view3D.getDOMElement().parentNode) {
+                    view3D.getDOMElement().parentNode.removeChild(view3D.getDOMElement());
                 }
-            })();
+                view3D.removeAllVolumes();
+            };
         }
     }, [viewerRef, view3D]);
 
+    // Various useEffect hooks for updating the volume based on user controls
     useEffect(() => {
         if (currentVolume) {
             view3D.updateDensity(currentVolume, densitySliderToView3D(density));
@@ -217,17 +220,17 @@ function App() {
             view3D.updateExposure(exposure);
             view3D.redraw();
         }
-    }, [exposure]);
+    }, [currentVolume, exposure, view3D]);
 
     useEffect(() => {
         view3D.setVolumeRenderMode(isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
         view3D.redraw();
-    }, [isPT]);
+    }, [isPT, view3D]);
 
     useEffect(() => {
         view3D.updateLights(lights);
         view3D.redraw();
-    }, [lights]);
+    }, [lights, view3D]);
 
     useEffect(() => {
         if (currentVolume) {
@@ -243,25 +246,25 @@ function App() {
 
     useEffect(() => {
         view3D.setAutoRotate(isTurntable);
-    }, [isTurntable]);
+    }, [isTurntable, view3D]);
 
     useEffect(() => {
         view3D.setShowAxis(showAxis);
-    }, [showAxis]);
+    }, [showAxis, view3D]);
 
     useEffect(() => {
         if (currentVolume) {
             view3D.setShowBoundingBox(currentVolume, showBoundingBox);
         }
-    }, [showBoundingBox]);
+    }, [currentVolume, showBoundingBox, view3D]);
 
     useEffect(() => {
         view3D.setShowScaleBar(showScaleBar);
-    }, [showScaleBar]);
+    }, [showScaleBar, view3D]);
 
     useEffect(() => {
         view3D.setBackgroundColor(backgroundColor);
-    }, [backgroundColor]);
+    }, [backgroundColor, view3D]);
 
     useEffect(() => {
         if (currentVolume) {
@@ -788,12 +791,31 @@ function App() {
                         </Row>
                     </Panel>
                 </Collapse>
+                <div>
+                    <Collapse accordion>
+                        {Object.keys(fileData).map((bodyPart) => (
+                            <Panel header={bodyPart} key={bodyPart}>
+                                {fileData[bodyPart].map((file) => (
+                                    <div
+                                        key={file}
+                                        style={{ padding: '8px 0', cursor: 'pointer', color: 'blue' }}
+                                        onClick={() => handleFileSelect(bodyPart, file)}
+                                    >
+                                        {file}
+                                    </div>
+                                ))}
+                            </Panel>
+                        ))}
+                    </Collapse>
+                </div>
             </Sider>
-            <Content style={{ padding: 0, margin: 0 }}>
-                <div id="volume-viewer" ref={viewerRef} style={{ width: '100%', height: '100vh', position: 'relative' }}></div>
+            <Content style={{ padding: 0, margin: 0, position: 'relative' }}>
+                <Spin spinning={isLoading} tip="Loading volume data..." size="large">
+                    <div id="volume-viewer" ref={viewerRef} style={{ width: '100%', height: '100vh', position: 'relative' }}></div>
+                </Spin>
             </Content>
         </Layout>
     );
 }
 
-export default App;
+export default VolumeViewer;
