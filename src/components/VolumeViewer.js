@@ -94,9 +94,18 @@ const VolumeViewer = () => {
     };
 
     const onVolumeCreated = (volume) => {
+        
+        volume.channelColorsDefault = volume.imageInfo.channelNames.map(() => DEFAULT_CHANNEL_COLOR);
+
         setCurrentVolume(volume);
         view3D.removeAllVolumes();
         view3D.addVolume(volume);
+
+
+        // Log the channel colors to verify the change
+        console.log("Channel Default Colors:", volume.channelColors);
+
+
         setInitialRenderMode();
         showChannelUI(volume);
         view3D.updateActiveChannels(volume);
@@ -304,11 +313,13 @@ const VolumeViewer = () => {
         view3D.setMaxProjectMode(currentVolume, false);
     };
 
-    const showChannelUI = (volume) => {
+    const DEFAULT_CHANNEL_COLOR = [128, 128, 128]; // Medium gray
+
+      const showChannelUI = (volume) => {
         const channelGui = volume.imageInfo.channelNames.map((name, index) => ({
             name,
             enabled: index < 3,
-            colorD: volume.channelColorsDefault[index],
+            colorD: volume.channelColorsDefault[index] || DEFAULT_CHANNEL_COLOR,
             colorS: [0, 0, 0],
             colorE: [0, 0, 0],
             glossiness: 0,
@@ -318,13 +329,18 @@ const VolumeViewer = () => {
             isosurface: false
         }));
         setChannels(channelGui);
+    
+        // Log channel colors for verification
+        channelGui.forEach((channel, index) => {
+            console.log(`Channel ${index} (${channel.name}) color:`, channel.colorD);
+        });
     };
 
     const updateChannel = (index, key, value) => {
         const updatedChannels = [...channels];
         updatedChannels[index][key] = value;
         setChannels(updatedChannels);
-
+    
         if (currentVolume) {
             if (key === 'enabled') {
                 view3D.setVolumeChannelEnabled(currentVolume, index, value);
@@ -348,6 +364,28 @@ const VolumeViewer = () => {
                 currentVolume.setLut(index, lut);
                 view3D.updateLuts(currentVolume);
             }
+            view3D.redraw();
+        }
+    };
+
+
+    // Histogram-based LUT adjustments
+    const updateChannelLut = (index, type) => {
+        if (currentVolume) {
+            let lut;
+            if (type === 'autoIJ') {
+                const [hmin, hmax] = currentVolume.getHistogram(index).findAutoIJBins();
+                lut = new Lut().createFromMinMax(hmin, hmax);
+            } else if (type === 'auto0') {
+                const [b, e] = currentVolume.getHistogram(index).findAutoMinMax();
+                lut = new Lut().createFromMinMax(b, e);
+            } else if (type === 'bestFit') {
+                const [hmin, hmax] = currentVolume.getHistogram(index).findBestFitBins();
+                lut = new Lut().createFromMinMax(hmin, hmax);
+            }
+
+            currentVolume.setLut(index, lut);
+            view3D.updateLuts(currentVolume);
             view3D.redraw();
         }
     };
@@ -637,50 +675,11 @@ const VolumeViewer = () => {
                                     </Col>
                                 </Row>
                                 <Row>
-                                    <Col span={12}>Specular Color</Col>
+                                    <Col span={12}>Histogram Adjustments</Col>
                                     <Col span={12}>
-                                        <Input type="color" value={`#${channel.colorS.map(c => c.toString(16).padStart(2, '0')).join('')}`} onChange={(e) => updateChannel(index, 'colorS', e.target.value.match(/.{1,2}/g).map(c => parseInt(c, 16)))} />
-                                    </Col>
-                                </Row>
-                                <Row>
-                                    <Col span={12}>Emissive Color</Col>
-                                    <Col span={12}>
-                                        <Input type="color" value={`#${channel.colorE.map(c => c.toString(16).padStart(2, '0')).join('')}`} onChange={(e) => updateChannel(index, 'colorE', e.target.value.match(/.{1,2}/g).map(c => parseInt(c, 16)))} />
-                                    </Col>
-                                </Row>
-                                <Row>
-                                    <Col span={12}>Glossiness</Col>
-                                    <Col span={12}>
-                                        <Slider
-                                            min={0}
-                                            max={100}
-                                            value={channel.glossiness}
-                                            onChange={(value) => updateChannel(index, 'glossiness', value)}
-                                        />
-                                    </Col>
-                                </Row>
-                                <Row>
-                                    <Col span={12}>Window</Col>
-                                    <Col span={12}>
-                                        <Slider
-                                            min={0}
-                                            max={1}
-                                            step={0.01}
-                                            value={channel.window}
-                                            onChange={(value) => updateChannel(index, 'window', value)}
-                                        />
-                                    </Col>
-                                </Row>
-                                <Row>
-                                    <Col span={12}>Level</Col>
-                                    <Col span={12}>
-                                        <Slider
-                                            min={0}
-                                            max={1}
-                                            step={0.01}
-                                            value={channel.level}
-                                            onChange={(value) => updateChannel(index, 'level', value)}
-                                        />
+                                        <Button onClick={() => updateChannelLut(index, 'autoIJ')}>Auto IJ</Button>
+                                        <Button onClick={() => updateChannelLut(index, 'auto0')}>Auto Min/Max</Button>
+                                        <Button onClick={() => updateChannelLut(index, 'bestFit')}>Best Fit</Button>
                                     </Col>
                                 </Row>
                             </div>

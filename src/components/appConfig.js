@@ -178,3 +178,5 @@ export const getDefaultChannelState = () => ({
   color: [255, 255, 255],
   controlPoints: [],
 });
+
+export const DEFAULT_CHANNEL_COLOR = [128, 128, 128]; // Medium gray
