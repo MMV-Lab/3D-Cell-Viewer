@@ -14,7 +14,7 @@ import {
 import * as THREE from 'three';
 import { loaderContext, PREFETCH_DISTANCE, MAX_PREFETCH_CHUNKS, myState } from "./appConfig";
 import { useConstructor } from './useConstructor';
-import { Slider, Switch, InputNumber, Row, Col, Collapse, Layout, Button, Select, Input, Tooltip, Spin } from 'antd';
+import { Slider, Switch, InputNumber, Row, Col, Collapse, Layout, Button, Select, Input, Tooltip, Spin, Menu, Tabs, Card} from 'antd';
 import axios from 'axios';
 import { API_URL } from '../config'; // Importing API_URL from your config
 
@@ -30,10 +30,11 @@ const concatenateArrays = (arrays) => {
     return result;
 }
 
-const { Sider, Content } = Layout;
+const { Header, Sider, Content, Footer } = Layout;
 const { Panel } = Collapse;
 const { Option } = Select;
 const { Vector3 } = THREE;
+const { TabPane } = Tabs;
 
 const VolumeViewer = () => {
     const viewerRef = useRef(null);
@@ -138,7 +139,6 @@ const VolumeViewer = () => {
         view3D.setRayStepSizes(volume, primaryRay, secondaryRay);
         view3D.updateExposure(exposure);
         view3D.updateCamera(fov, focalDistance, aperture);
-        view3D.updateActiveChannels(volume)
         // view3D.updatePixelSamplingRate(samplingRate);
         view3D.redraw();
     };
@@ -264,11 +264,8 @@ const VolumeViewer = () => {
     }, [isPT, view3D]);
 
     useEffect(() => {
-        if (currentVolume) {
-            view3D.updateLights(lights);
-            view3D.updateActiveChannels(currentVolume);
-            view3D.redraw();
-        }
+        view3D.updateLights(lights);
+        view3D.redraw();
     }, [lights, view3D]);
 
     useEffect(() => {
@@ -341,7 +338,6 @@ const VolumeViewer = () => {
     useEffect(() => {
         if (currentVolume) {
             view3D.updateCamera(fov, focalDistance, aperture);
-            view3D.updateActiveChannels(currentVolume);
             view3D.redraw();
         }
     }, [fov, focalDistance, aperture]);
@@ -350,7 +346,6 @@ const VolumeViewer = () => {
     useEffect(() => {
         if (currentVolume) {
             view3D.setRayStepSizes(currentVolume, primaryRay, secondaryRay);
-            view3D.updateActiveChannels(currentVolume);
             view3D.redraw();
         }
     }, [primaryRay, secondaryRay]);
@@ -358,7 +353,6 @@ const VolumeViewer = () => {
     useEffect(() => {
         if (currentVolume) {
             view3D.updateMaskAlpha(currentVolume, maskAlpha);
-            view3D.updateActiveChannels(currentVolume);
             view3D.redraw();
         }
     }, [maskAlpha])
@@ -382,8 +376,7 @@ const VolumeViewer = () => {
                 (skyBotColor[2] / 255.0) * skyBotIntensity
             );
             view3D.updateLights(lights);
-            view3D.updateActiveChannels(currentVolume);
-            view3D.redraw();
+            // view3D.redraw();
             console.log([skyTopColor, skyTopIntensity, skyMidColor, skyMidIntensity, skyBotColor, skyBotIntensity]);
         }
         
@@ -401,8 +394,7 @@ const VolumeViewer = () => {
             areaLight.mTheta = (lightTheta * Math.PI) / 180.0;
             areaLight.mPhi = (lightPhi * Math.PI) / 180.0;
             view3D.updateLights(lights);
-            view3D.updateActiveChannels(currentVolume);
-            view3D.redraw();
+            // view3D.redraw();
         }
         console.log([lightColor, lightIntensity, lightTheta, lightPhi]);
     }, [lightColor, lightIntensity, lightTheta, lightPhi]);
@@ -758,397 +750,15 @@ const VolumeViewer = () => {
 
     return (
         <Layout style={{ height: '100vh' }}>
-            <Sider width={300} style={{ background: '#fff', padding: '20px' }}>
-                <Collapse defaultActiveKey={['1']}>
-                    {/* Render Mode */}
-                    <Panel header="Render Mode" key="1">
-                        <Row>
-                            <Col span={12}>Path Trace</Col>
-                            <Col span={12}>
-                                <Switch checked={isPT} onChange={(checked) => setIsPT(checked)} />
-                            </Col>
-                        </Row>
-                    </Panel>
-    
-                    {/* Density */}
-                    <Panel header="Density" key="2">
-                        <Slider min={0} max={100} step={0.1} value={density} onChange={setDensity} />
-                    </Panel>
-    
-                    {/* Mask Alpha */}
-                    <Panel header="Mask Alpha" key="2_1">
-                        <Slider min={0} max={1} step={0.01} value={maskAlpha} onChange={setMaskAlpha} />
-                    </Panel>
-    
-                    {/* Ray Step Sizes */}
-                    <Panel header="Primary Ray" key="2_2">
-                        <Slider min={1} max={40} step={0.1} value={primaryRay} onChange={setPrimaryRay} />
-                    </Panel>
-                    <Panel header="Secondary Ray" key="2_3">
-                        <Slider min={1} max={40} step={0.1} value={secondaryRay} onChange={setSecondaryRay} />
-                    </Panel>
-    
-                    {/* Exposure */}
-                    <Panel header="Exposure" key="3">
-                        <Slider min={0} max={1} step={0.01} value={exposure} onChange={setExposure} />
-                    </Panel>
-    
-                    {/* Camera Settings */}
-                    <Panel header="Camera Settings" key="7">
-                        <Row>
-                            <Col span={12}>FOV</Col>
-                            <Col span={12}>
-                                <InputNumber min={0} max={90} step={1} value={fov} onChange={setFov} />
-                            </Col>
-                        </Row>
-                        <Row>
-                            <Col span={12}>Focal Distance</Col>
-                            <Col span={12}>
-                                <InputNumber min={0.1} max={5.0} step={0.01} value={focalDistance} onChange={setFocalDistance} />
-                            </Col>
-                        </Row>
-                        <Row>
-                            <Col span={12}>Aperture</Col>
-                            <Col span={12}>
-                                <InputNumber min={0.0} max={0.1} step={0.001} value={aperture} onChange={setAperture} />
-                            </Col>
-                        </Row>
-                    </Panel>
-    
-                    {/* Sampling Rate */}
-                    <Panel header="Sampling Rate" key="14">
-                        <Row>
-                            <Col span={12}>Pixel Sampling Rate</Col>
-                            <Col span={12}>
-                                <InputNumber
-                                    min={0.1}
-                                    max={1.0}
-                                    step={0.01}
-                                    value={samplingRate}
-                                    onChange={updatePixelSamplingRate}
-                                />
-                            </Col>
-                        </Row>
-                    </Panel>
-    
-                    {/* Lights */}
-                    <Panel header="Lights" key="4">
-                        {lights.map((light, index) => (
-                            <div key={index}>
-                                <Row>
-                                    <Col span={12}>Intensity</Col>
-                                    <Col span={12}>
-                                        <InputNumber min={0} max={1000} value={light.mColor.x * 255}
-                                            onChange={(value) => {
-                                                const updatedLights = [...lights];
-                                                updatedLights[index].mColor.setScalar(value / 255);
-                                                setLights(updatedLights);
-                                            }}
-                                        />
-                                    </Col>
-                                </Row>
-                                <Row>
-                                    <Col span={12}>Theta</Col>
-                                    <Col span={12}>
-                                        <InputNumber min={0} max={360} value={light.mTheta * (180 / Math.PI)}
-                                            onChange={(value) => {
-                                                const updatedLights = [...lights];
-                                                updatedLights[index].mTheta = value * (Math.PI / 180);
-                                                setLights(updatedLights);
-                                            }}
-                                        />
-                                    </Col>
-                                </Row>
-                                <Row>
-                                    <Col span={12}>Phi</Col>
-                                    <Col span={12}>
-                                        <InputNumber min={0} max={360} value={light.mPhi * (180 / Math.PI)}
-                                            onChange={(value) => {
-                                                const updatedLights = [...lights];
-                                                updatedLights[index].mPhi = value * (Math.PI / 180);
-                                                setLights(updatedLights);
-                                            }}
-                                        />
-                                    </Col>
-                                </Row>
-                            </div>
-                        ))}
-                    </Panel>
-
-                    <Panel header="Lighting" key="11">
-                        <Collapse>
-                            <Panel header="Sky Light" key="1">
-                                <Row>
-                                    <Col span={8}>Top Intensity</Col>
-                                    <Col span={16}>
-                                        <Slider
-                                            min={0}
-                                            max={1}
-                                            step={0.01}
-                                            value={skyTopIntensity}
-                                            onChange={(value) => updateSkyLight('top', value, skyTopColor)}
-                                        />
-                                    </Col>
-                                </Row>
-                                <Row>
-                                    <Col span={8}>Top Color</Col>
-                                    <Col span={16}>
-                                        <Input
-                                            type="color"
-                                            value={rgbToHex(skyTopColor[0], skyTopColor[1], skyTopColor[2])}
-                                            onChange={(e) => updateSkyLight('top', skyTopIntensity, e.target.value.match(/[A-Za-z0-9]{2}/g).map(v => parseInt(v, 16)))}
-                                        />
-                                    </Col>
-                                </Row>
-                                {/* Repeat for Mid and Bottom with appropriate state variables */}
-                            </Panel>
-                            <Panel header="Area Light" key="2">
-                                <Row>
-                                    <Col span={8}>Intensity</Col>
-                                    <Col span={16}>
-                                        <Slider
-                                            min={0}
-                                            max={200}
-                                            step={1}
-                                            value={lightIntensity}
-                                            onChange={(value) => updateAreaLight(value, lightColor, lightTheta, lightPhi)}
-                                        />
-                                    </Col>
-                                </Row>
-                                <Row>
-                                    <Col span={8}>Color</Col>
-                                    <Col span={16}>
-                                        <Input
-                                            type="color"
-                                            value={rgbToHex(lightColor[0], lightColor[1], lightColor[2])}
-                                            onChange={(e) => updateAreaLight(lightIntensity, e.target.value.match(/[A-Za-z0-9]{2}/g).map(v => parseInt(v, 16)), lightTheta, lightPhi)}
-                                        />
-                                    </Col>
-                                </Row>
-                                <Row>
-                                    <Col span={8}>Theta (deg)</Col>
-                                    <Col span={16}>
-                                        <Slider
-                                            min={0}
-                                            max={360}
-                                            step={1}
-                                            value={lightTheta}
-                                            onChange={(value) => updateAreaLight(lightIntensity, lightColor, value, lightPhi)}
-                                        />
-                                    </Col>
-                                </Row>
-                                <Row>
-                                    <Col span={8}>Phi (deg)</Col>
-                                    <Col span={16}>
-                                        <Slider
-                                            min={0}
-                                            max={180}
-                                            step={1}
-                                            value={lightPhi}
-                                            onChange={(value) => updateAreaLight(lightIntensity, lightColor, lightTheta, value)}
-                                        />
-                                    </Col>
-                                </Row>
-                            </Panel>
-                        </Collapse>
-                    </Panel>
-    
-                    {/* Camera Mode */}
-                    <Panel header="Camera Mode" key="5">
-                        <Select defaultValue={cameraMode} style={{ width: '100%' }} onChange={setCameraModeHandler}>
-                            <Option value="X">X</Option>
-                            <Option value="Y">Y</Option>
-                            <Option value="Z">Z</Option>
-                            <Option value="3D">3D</Option>
-                        </Select>
-                    </Panel>
-    
-                    {/* Controls */}
-                    <Panel header="Controls" key="6">
-                        <Button onClick={toggleTurntable}>{isTurntable ? "Stop Turntable" : "Start Turntable"}</Button>
-                        <Button onClick={toggleAxis}>{showAxis ? "Hide Axis" : "Show Axis"}</Button>
-                        <Button onClick={toggleBoundingBox}>{showBoundingBox ? "Hide Bounding Box" : "Show Bounding Box"}</Button>
-                        <Button onClick={toggleScaleBar}>{showScaleBar ? "Hide Scale Bar" : "Show Scale Bar"}</Button>
-                        <Row>
-                            <Col span={12}>Background Color</Col>
-                            <Col span={12}>
-                                <Input type="color" value={`#${backgroundColor.map(c => c.toString(16).padStart(2, '0')).join('')}`}
-                                    onChange={(e) => updateBackgroundColor(e.target.value.match(/.{1,2}/g).map(c => parseInt(c, 16)))} />
-                            </Col>
-                        </Row>
-                        <Row>
-                            <Col span={12}>Bounding Box Color</Col>
-                            <Col span={12}>
-                                <Input type="color" value={`#${boundingBoxColor.map(c => c.toString(16).padStart(2, '0')).join('')}`}
-                                    onChange={(e) => updateBoundingBoxColor(e.target.value.match(/.{1,2}/g).map(c => parseInt(c, 16)))} />
-                            </Col>
-                        </Row>
-                        <Button onClick={() => flipVolume('X')}>Flip X</Button>
-                        <Button onClick={() => flipVolume('Y')}>Flip Y</Button>
-                        <Button onClick={() => flipVolume('Z')}>Flip Z</Button>
-                    </Panel>
-    
-                    {/* Gamma */}
-                    <Panel header="Gamma" key="7">
-                        <Row>
-                            <Col span={8}>Min</Col>
-                            <Col span={16}>
-                                <InputNumber min={0} max={255} value={gamma[0]}
-                                    onChange={(value) => updateGamma([value, gamma[1], gamma[2]])} />
-                            </Col>
-                        </Row>
-                        <Row>
-                            <Col span={8}>Mid</Col>
-                            <Col span={16}>
-                                <InputNumber min={0} max={255} value={gamma[1]}
-                                    onChange={(value) => updateGamma([gamma[0], value, gamma[2]])} />
-                            </Col>
-                        </Row>
-                        <Row>
-                            <Col span={8}>Max</Col>
-                            <Col span={16}>
-                                <InputNumber min={0} max={255} value={gamma[2]}
-                                    onChange={(value) => updateGamma([gamma[0], gamma[1], value])} />
-                            </Col>
-                        </Row>
-                    </Panel>
-    
-                    {/* Channels */}
-                    <Panel header="Channels" key="8">
-                        {channels.map((channel, index) => (
-                            <div key={index}>
-                                <Row>
-                                    <Col span={12}>Enable</Col>
-                                    <Col span={12}>
-                                        <Switch checked={channel.enabled} onChange={(checked) => updateChannel(index, 'enabled', checked)} />
-                                    </Col>
-                                </Row>
-                                {channel.isosurfaceEnabled && (
-                                        <>
-                                            <Row>
-                                                <Col span={12}>Isovalue</Col>
-                                                <Col span={12}>
-                                                    <Slider
-                                                        min={0}
-                                                        max={255}
-                                                        value={channel.isovalue}
-                                                        onChange={(value) => updateChannelOptions(index, { isovalue: value })}
-                                                    />
-                                                </Col>
-                                            </Row>
-                                            <Row>
-                                                <Col span={12}>Isosurface Opacity</Col>
-                                                <Col span={12}>
-                                                    <Slider
-                                                        min={0}
-                                                        max={1}
-                                                        step={0.01}
-                                                        value={channel.isosurfaceOpacity}
-                                                        onChange={(value) => updateChannelOptions(index, { isosurfaceOpacity: value })}
-                                                    />
-                                                </Col>
-                                            </Row>
-                                        </>
-                                    )}
-                                <Row>
-                                    <Col span={12}>Diffuse Color</Col>
-                                    <Col span={12}>
-                                        <Input type="color" value={rgbToHex(channel.colorD[0], channel.colorD[1], channel.colorD[2])}
-                                            onChange={(e) => updateChannel(index, 'colorD', e.target.value.match(/.{1,2}/g).map(c => parseInt(c, 16)))} />
-                                    </Col>
-                                </Row>
-                                <Row>
-                                    <Col span={12}>Histogram Adjustments</Col>
-                                    <Col span={12}>
-                                        <Button onClick={() => updateChannelLut(index, 'autoIJ')}>Auto IJ</Button>
-                                        <Button onClick={() => updateChannelLut(index, 'auto0')}>Auto Min/Max</Button>
-                                        <Button onClick={() => updateChannelLut(index, 'bestFit')}>Best Fit</Button>
-                                        <Button onClick={() => updateChannelLut(index, 'pct50_98')}>50-98 Percentile</Button>
-                                    </Col>
-                                </Row>
-                            </div>
-                        ))}
-                    </Panel>
-    
-                    {/* Clip Region */}
-                    <Panel header="Clip Region" key="9">
-                        <Row>
-                            <Col span={8}>X Min</Col>
-                            <Col span={16}>
-                                <Slider min={0} max={1} step={0.01} value={clipRegion.xmin} onChange={(value) => updateClipRegion('xmin', value)} />
-                            </Col>
-                        </Row>
-                        <Row>
-                            <Col span={8}>X Max</Col>
-                            <Col span={16}>
-                                <Slider min={0} max={1} step={0.01} value={clipRegion.xmax} onChange={(value) => updateClipRegion('xmax', value)} />
-                            </Col>
-                        </Row>
-                        <Row>
-                            <Col span={8}>Y Min</Col>
-                            <Col span={16}>
-                                <Slider min={0} max={1} step={0.01} value={clipRegion.ymin} onChange={(value) => updateClipRegion('ymin', value)} />
-                            </Col>
-                        </Row>
-                        <Row>
-                            <Col span={8}>Y Max</Col>
-                            <Col span={16}>
-                                <Slider min={0} max={1} step={0.01} value={clipRegion.ymax} onChange={(value) => updateClipRegion('ymax', value)} />
-                            </Col>
-                        </Row>
-                        <Row>
-                            <Col span={8}>Z Min</Col>
-                            <Col span={16}>
-                                <Slider min={0} max={1} step={0.01} value={clipRegion.zmin} onChange={(value) => updateClipRegion('zmin', value)} />
-                            </Col>
-                        </Row>
-                        <Row>
-                            <Col span={8}>Z Max</Col>
-                            <Col span={16}>
-                                <Slider min={0} max={1} step={0.01} value={clipRegion.zmax} onChange={(value) => updateClipRegion('zmax', value)} />
-                            </Col>
-                        </Row>
-                    </Panel>
-    
-                    {/* Playback */}
-                    <Panel header="Playback" key="10">
-                        <Row>
-                            <Button onClick={playTimeSeries} disabled={isPlaying}>Play</Button>
-                            <Button onClick={pauseTimeSeries} disabled={!isPlaying}>Pause</Button>
-                            <Button onClick={() => goToFrame(currentFrame + 1)}>Forward</Button>
-                            <Button onClick={() => goToFrame(currentFrame - 1)}>Backward</Button>
-                        </Row>
-                        <Row>
-                            <Col span={12}>Frame</Col>
-                            <Col span={12}>
-                                <InputNumber min={0} max={totalFrames - 1} value={currentFrame} onChange={goToFrame} />
-                            </Col>
-                        </Row>
-                        <Row>
-                            <Col span={12}>Z Slice</Col>
-                            <Col span={12}>
-                                <InputNumber
-                                    id="zValue"
-                                    min={0}
-                                    max={currentVolume ? currentVolume.imageInfo.volumeSize.z - 1 : 0}
-                                    value={currentVolume ? currentVolume.currentZSlice : 0}
-                                    onChange={goToZSlice}
-                                />
-                            </Col>
-                        </Row>
-                        <Row>
-                            <Slider
-                                id="zSlider"
-                                min={0}
-                                max={currentVolume ? currentVolume.imageInfo.volumeSize.z - 1 : 0}
-                                value={currentVolume ? currentVolume.currentZSlice : 0}
-                                onChange={goToZSlice}
-                            />
-                        </Row>
-                    </Panel>
-                </Collapse>
-    
-                <div>
+            <Header style={{ background: '#fff', padding: 0 }}>
+                <Menu mode="horizontal" defaultSelectedKeys={['1']}>
+                    <Menu.Item key="1">Home</Menu.Item>
+                    <Menu.Item key="2">About</Menu.Item>
+                    <Menu.Item key="3">Help</Menu.Item>
+                </Menu>
+            </Header>
+            <Layout>
+                <Sider width={300} style={{ background: '#fff', padding: '20px', overflowY: 'auto' }}>
                     <Collapse accordion>
                         {Object.keys(fileData).map((bodyPart) => (
                             <Panel header={bodyPart} key={bodyPart}>
@@ -1162,14 +772,297 @@ const VolumeViewer = () => {
                             </Panel>
                         ))}
                     </Collapse>
-                </div>
-            </Sider>
-    
-            <Content style={{ padding: 0, margin: 0, position: 'relative' }}>
-                <Spin spinning={isLoading} tip="Loading volume data..." size="large">
-                    <div id="volume-viewer" ref={viewerRef} style={{ width: '100%', height: '100vh', position: 'relative' }}></div>
-                </Spin>
-            </Content>
+                </Sider>
+                <Layout style={{ flexGrow: 1, overflow: 'hidden' }}>
+                   <Content style={{ display: 'flex', padding: '20px', overflow: 'hidden' }}>
+                   <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', marginRight: '20px', overflow: 'hidden' }}>
+                            <div style={{ flex: 1, position: 'relative', marginRight: '20px' }}>
+                                <Spin spinning={isLoading} tip="Loading volume data..." size="large">
+                                    <div id="volume-viewer" ref={viewerRef} style={{ width: '100%', height: '100%', position: 'relative' }}></div>
+                                </Spin>
+                            </div>
+                            <Card style={{ width: '300px', overflowY: 'auto' }}>
+                                <Tabs defaultActiveKey="1" tabPosition="left">
+                                    <TabPane tab="Render" key="1">
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                            <div>
+                                                <Switch checked={isPT} onChange={(checked) => setIsPT(checked)} /> Path Trace
+                                            </div>
+                                            <div>
+                                                Density: <Slider min={0} max={100} step={0.1} value={density} onChange={setDensity} />
+                                            </div>
+                                            <div>
+                                                Mask Alpha: <Slider min={0} max={1} step={0.01} value={maskAlpha} onChange={setMaskAlpha} />
+                                            </div>
+                                            <div>
+                                                Primary Ray: <Slider min={1} max={40} step={0.1} value={primaryRay} onChange={setPrimaryRay} />
+                                            </div>
+                                            <div>
+                                                Secondary Ray: <Slider min={1} max={40} step={0.1} value={secondaryRay} onChange={setSecondaryRay} />
+                                            </div>
+                                            <div>
+                                                Exposure: <Slider min={0} max={1} step={0.01} value={exposure} onChange={setExposure} />
+                                            </div>
+                                        </div>
+                                    </TabPane>
+                                    <TabPane tab="Camera" key="2">
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                            <div>
+                                                FOV: <InputNumber min={0} max={90} step={1} value={fov} onChange={setFov} />
+                                            </div>
+                                            <div>
+                                                Focal Distance: <InputNumber min={0.1} max={5.0} step={0.01} value={focalDistance} onChange={setFocalDistance} />
+                                            </div>
+                                            <div>
+                                                Aperture: <InputNumber min={0.0} max={0.1} step={0.001} value={aperture} onChange={setAperture} />
+                                            </div>
+                                            <div>
+                                                Pixel Sampling Rate: <InputNumber min={0.1} max={1.0} step={0.01} value={samplingRate} onChange={updatePixelSamplingRate} />
+                                            </div>
+                                            <div>
+                                                Camera Mode: 
+                                                <Select defaultValue={cameraMode} style={{ width: '100%' }} onChange={setCameraModeHandler}>
+                                                    <Option value="X">X</Option>
+                                                    <Option value="Y">Y</Option>
+                                                    <Option value="Z">Z</Option>
+                                                    <Option value="3D">3D</Option>
+                                                </Select>
+                                            </div>
+                                        </div>
+                                    </TabPane>
+                                    <TabPane tab="Lighting" key="3">
+                                        <Tabs>
+                                            <TabPane tab="Sky Light" key="1">
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                                    <div>
+                                                        Top Intensity:
+                                                        <Slider
+                                                            min={0}
+                                                            max={1}
+                                                            step={0.01}
+                                                            value={skyTopIntensity}
+                                                            onChange={(value) => updateSkyLight('top', value, skyTopColor)}
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        Top Color:
+                                                        <Input
+                                                            type="color"
+                                                            value={rgbToHex(skyTopColor[0], skyTopColor[1], skyTopColor[2])}
+                                                            onChange={(e) => updateSkyLight('top', skyTopIntensity, e.target.value.match(/[A-Za-z0-9]{2}/g).map(v => parseInt(v, 16)))}
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        Mid Intensity:
+                                                        <Slider
+                                                            min={0}
+                                                            max={1}
+                                                            step={0.01}
+                                                            value={skyMidIntensity}
+                                                            onChange={(value) => updateSkyLight('mid', value, skyMidColor)}
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        Mid Color:
+                                                        <Input
+                                                            type="color"
+                                                            value={rgbToHex(skyMidColor[0], skyMidColor[1], skyMidColor[2])}
+                                                            onChange={(e) => updateSkyLight('mid', skyMidIntensity, e.target.value.match(/[A-Za-z0-9]{2}/g).map(v => parseInt(v, 16)))}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </TabPane>
+                                            <TabPane tab="Area Light" key="2">
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                                    <div>
+                                                        Intensity:
+                                                        <Slider
+                                                            min={0}
+                                                            max={200}
+                                                            step={1}
+                                                            value={lightIntensity}
+                                                            onChange={(value) => updateAreaLight(value, lightColor, lightTheta, lightPhi)}
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        Color:
+                                                        <Input
+                                                            type="color"
+                                                            value={rgbToHex(lightColor[0], lightColor[1], lightColor[2])}
+                                                            onChange={(e) => updateAreaLight(lightIntensity, e.target.value.match(/[A-Za-z0-9]{2}/g).map(v => parseInt(v, 16)), lightTheta, lightPhi)}
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        Theta (deg):
+                                                        <Slider
+                                                            min={0}
+                                                            max={360}
+                                                            step={1}
+                                                            value={lightTheta}
+                                                            onChange={(value) => updateAreaLight(lightIntensity, lightColor, value, lightPhi)}
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        Phi (deg):
+                                                        <Slider
+                                                            min={0}
+                                                            max={180}
+                                                            step={1}
+                                                            value={lightPhi}
+                                                            onChange={(value) => updateAreaLight(lightIntensity, lightColor, lightTheta, value)}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </TabPane>
+                                        </Tabs>
+                                    </TabPane>
+                                    <TabPane tab="Controls" key="4">
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                            <Button onClick={toggleTurntable}>{isTurntable ? "Stop Turntable" : "Start Turntable"}</Button>
+                                            <Button onClick={toggleAxis}>{showAxis ? "Hide Axis" : "Show Axis"}</Button>
+                                            <Button onClick={toggleBoundingBox}>{showBoundingBox ? "Hide Bounding Box" : "Show Bounding Box"}</Button>
+                                            <Button onClick={toggleScaleBar}>{showScaleBar ? "Hide Scale Bar" : "Show Scale Bar"}</Button>
+                                            <Button onClick={() => flipVolume('X')}>Flip X</Button>
+                                            <Button onClick={() => flipVolume('Y')}>Flip Y</Button>
+                                            <Button onClick={() => flipVolume('Z')}>Flip Z</Button>
+                                            <div>
+                                                Background Color:
+                                                <Input type="color" value={`#${backgroundColor.map(c => c.toString(16).padStart(2, '0')).join('')}`}
+                                                    onChange={(e) => updateBackgroundColor(e.target.value.match(/.{1,2}/g).map(c => parseInt(c, 16)))} />
+                                            </div>
+                                            <div>
+                                                Bounding Box Color:
+                                                <Input type="color" value={`#${boundingBoxColor.map(c => c.toString(16).padStart(2, '0')).join('')}`}
+                                                    onChange={(e) => updateBoundingBoxColor(e.target.value.match(/.{1,2}/g).map(c => parseInt(c, 16)))} />
+                                            </div>
+                                        </div>
+                                    </TabPane>
+                                    <TabPane tab="Channels" key="5">
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                            {channels.map((channel, index) => (
+                                                <div key={index}>
+                                                    <div>
+                                                        <Switch checked={channel.enabled} onChange={(checked) => updateChannel(index, 'enabled', checked)} /> Enable
+                                                    </div>
+                                                    {channel.isosurfaceEnabled && (
+                                                        <>
+                                                            <div>
+                                                                Isovalue:
+                                                                <Slider
+                                                                    min={0}
+                                                                    max={255}
+                                                                    value={channel.isovalue}
+                                                                    onChange={(value) => updateChannelOptions(index, { isovalue: value })}
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                Isosurface Opacity:
+                                                                <Slider
+                                                                    min={0}
+                                                                    max={1}
+                                                                    step={0.01}
+                                                                    value={channel.isosurfaceOpacity}
+                                                                    onChange={(value) => updateChannelOptions(index, { isosurfaceOpacity: value })}
+                                                                />
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                    <div>
+                                                        Diffuse Color:
+                                                        <Input type="color" value={rgbToHex(channel.colorD[0], channel.colorD[1], channel.colorD[2])}
+                                                            onChange={(e) => updateChannel(index, 'colorD', e.target.value.match(/.{1,2}/g).map(c => parseInt(c, 16)))} />
+                                                    </div>
+                                                    <div>
+                                                        <Button onClick={() => updateChannelLut(index, 'autoIJ')}>Auto IJ</Button>
+                                                        <Button onClick={() => updateChannelLut(index, 'auto0')}>Auto Min/Max</Button>
+                                                        <Button onClick={() => updateChannelLut(index, 'bestFit')}>Best Fit</Button>
+                                                        <Button onClick={() => updateChannelLut(index, 'pct50_98')}>50-98 Percentile</Button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </TabPane>
+                                    <TabPane tab="Clip Region" key="6">
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                            <div>
+                                                X Min:
+                                                <Slider min={0} max={1} step={0.01} value={clipRegion.xmin} onChange={(value) => updateClipRegion('xmin', value)} />
+                                            </div>
+                                            <div>
+                                                X Max:
+                                                <Slider min={0} max={1} step={0.01} value={clipRegion.xmax} onChange={(value) => updateClipRegion('xmax', value)} />
+                                            </div>
+                                            <div>
+                                                Y Min:
+                                                <Slider min={0} max={1} step={0.01} value={clipRegion.ymin} onChange={(value) => updateClipRegion('ymin', value)} />
+                                            </div>
+                                            <div>
+                                                Y Max:
+                                                <Slider min={0} max={1} step={0.01} value={clipRegion.ymax} onChange={(value) => updateClipRegion('ymax', value)} />
+                                            </div>
+                                            <div>
+                                                Z Min:
+                                                <Slider min={0} max={1} step={0.01} value={clipRegion.zmin} onChange={(value) => updateClipRegion('zmin', value)} />
+                                            </div>
+                                            <div>
+                                                Z Max:
+                                                <Slider min={0} max={1} step={0.01} value={clipRegion.zmax} onChange={(value) => updateClipRegion('zmax', value)} />
+                                            </div>
+                                        </div>
+                                    </TabPane>
+                                    <TabPane tab="Playback" key="7">
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                            <div>
+                                                <Button onClick={playTimeSeries} disabled={isPlaying}>Play</Button>
+                                                <Button onClick={pauseTimeSeries} disabled={!isPlaying}>Pause</Button>
+                                                <Button onClick={() => goToFrame(currentFrame + 1)}>Forward</Button>
+                                                <Button onClick={() => goToFrame(currentFrame - 1)}>Backward</Button>
+                                            </div>
+                                            <div>
+                                                Frame: <InputNumber min={0} max={totalFrames - 1} value={currentFrame} onChange={goToFrame} />
+                                            </div>
+                                            <div>
+                                                Z Slice: <InputNumber
+                                                    id="zValue"
+                                                    min={0}
+                                                    max={currentVolume ? currentVolume.imageInfo.volumeSize.z - 1 : 0}
+                                                    value={currentVolume ? currentVolume.currentZSlice : 0}
+                                                    onChange={goToZSlice}
+                                                />
+                                            </div>
+                                            <div>
+                                                <Slider
+                                                    id="zSlider"
+                                                    min={0}
+                                                    max={currentVolume ? currentVolume.imageInfo.volumeSize.z - 1 : 0}
+                                                    value={currentVolume ? currentVolume.currentZSlice : 0}
+                                                    onChange={goToZSlice}
+                                                />
+                                            </div>
+                                        </div>
+                                    </TabPane>
+                                    <TabPane tab="Gamma" key="8">
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                            <div>
+                                                Min: <InputNumber min={0} max={255} value={gamma[0]}
+                                                    onChange={(value) => updateGamma([value, gamma[1], gamma[2]])} />
+                                            </div>
+                                            <div>
+                                                Mid: <InputNumber min={0} max={255} value={gamma[1]}
+                                                    onChange={(value) => updateGamma([gamma[0], value, gamma[2]])} />
+                                            </div>
+                                            <div>
+                                                Max: <InputNumber min={0} max={255} value={gamma[2]}
+                                                    onChange={(value) => updateGamma([gamma[0], gamma[1], value])} />
+                                            </div>
+                                        </div>
+                                    </TabPane>
+                                </Tabs>
+                            </Card>
+                        </div>
+                    </Content>
+                </Layout>
+            </Layout>
         </Layout>
     );
 }
