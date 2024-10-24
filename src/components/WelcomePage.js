@@ -12,20 +12,28 @@ function WelcomePage() {
 
   return (
     <section style={{ paddingTop: '60px', color: 'black', backgroundColor: 'white' }}>
-
       <div style={{ padding: '20px' }}>
-        <h1>Welcome to the ISAS Platform for 3D visualization</h1>
-        <p>This platform provides a comprehensive exploration and download functionality for various data on migrating cells, developed in collaboration with the Leibniz-Institut für Analytische Wissenschaften.</p>
-        <p>With a repository of over 1000 videos comprising more than 400,000 individual images, our platform provides a reliable source for detailed analysis. Intuitive widgets will allow users to selectively engage with different datasets, each presenting specific biological questions.</p>
-        <p>So far, we have provided the dataset "ComplexEye". Dive deep into the data by clicking on the corresponding widget.</p>
-        <p>More datasets will follow.</p>
+        <h1>Welcome to the ISAS LSFM Data Portal</h1>
+        <p>
+          Lightsheet fluorescence microscopy (LSFM) is a cutting-edge technique offering high optical resolutions and superior sectioning capabilities, 
+          ideal for whole-tissue, whole-organ, and potentially even whole-body imaging at cellular resolution. 
+        </p>
+        <p>
+          This portal hosts LSFM datasets collected at **ISAS** and in collaboration with research partners such as 
+          **Ruhr University Bochum** and **University Hospital Essen**, shared with permission for scientific research purposes. 
+        </p>
+        <p>
+          The portal offers an interactive platform for biomedical researchers to explore these large biomedical image datasets. It is 
+          equally beneficial for computational scientists and AI researchers interested in developing or applying LSFM analysis methods. 
+          We aim to make these datasets accessible to foster deeper exploration and innovative discoveries.
+        </p>
       </div>
 
       <main style={{ padding: '20px' }}>
         <h2>Load a dataset to get started</h2>
         <div style={gridContainerStyle}>
           {/* Example DatasetCard usage */}
-          <DatasetCard title="3D VesselExpress" description="Explore and visualize 3D volumetric data across various mouse body parts. This dataset includes high-resolution scans of organs such as the brain, available in multiple formats like OME-TIFF and Zarr. Dive into detailed biological structures with advanced rendering and analysis tools." datasetId="1" />
+          <DatasetCard title="VesselExpress" description="Data for 'Rapid and fully automated blood vasculature analysis in 3D light-sheet image volumes of different organs.'" datasetId="1" />
           <DatasetCard title="Dataset 2" description="Coming soon..." datasetId="2" />
           <DatasetCard title="Dataset 3" description="Coming soon..." datasetId="3" />
           <DatasetCard title="Dataset 4" description="Coming soon..." datasetId="4" />
