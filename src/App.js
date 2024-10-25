@@ -28,7 +28,7 @@ function App() {
             <Link to="/">
               <img src={logo} alt="ISAS Logo" className="logo" />
             </Link>
-            <h1 className="navbar-title">3D visualization</h1>
+            <h1 className="navbar-title">ISAS LSFM</h1>
           </nav>
         </header>
         {/* Wrapping the Routes and Footer within a flex container */}
