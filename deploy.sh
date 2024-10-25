@@ -13,10 +13,20 @@ RELEASE_BRANCH="release-$(date +'%Y%m%d%H%M%S')"
 
 echo "Creating a new release branch: $RELEASE_BRANCH"
 
-# Checkout to the deployment branch and pull the latest changes
-echo "Checking out to the deployment branch and pulling the latest changes..."
-git checkout make--it-load-gracefully
-git pull origin make--it-load-gracefully
+# Get the current branch name
+CURRENT_BRANCH=$(git branch --show-current)
+
+# Checkout to the 'ft-create-deployment-script' branch if not already on it
+if [ "$CURRENT_BRANCH" != "ft-create-deployment-script" ]; then
+  echo "Switching to 'ft-create-deployment-script' branch..."
+  git checkout ft-create-deployment-script
+else
+  echo "Already on 'ft-create-deployment-script' branch."
+fi
+
+# Pull the latest changes from the remote repository
+echo "Pulling the latest changes from 'ft-create-deployment-script' branch..."
+git pull origin ft-create-deployment-script
 
 # Create a new release branch from the current branch
 git checkout -b "$RELEASE_BRANCH"
@@ -31,9 +41,13 @@ export REACT_APP_UPLOAD_FOLDER="https://cellmigration.isas.de/uploads"
 # Proceed with the frontend deployment
 echo "Starting frontend-only deployment..."
 
+# Move to the frontend directory and install dependencies
+echo "Installing npm dependencies..."
+cd "$FRONTEND_DIR"
+npm install
+
 # Building the React Application
 echo "Building React app..."
-cd "$FRONTEND_DIR"
 npm run build
 
 # Check if the web server root directory exists, if not, create it
