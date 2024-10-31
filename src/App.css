@@ -1192,3 +1192,125 @@ button svg {
     width: 100%
   }
 }
+
+
+/* New Independent Scrolling Styles */
+.sider-container {
+  width: 300px;
+  height: 100vh;
+  overflow-y: auto;
+  position: relative;
+  z-index: 1;
+  padding-bottom: 60px;
+}
+
+.content-container {
+  flex: 1;
+  height: 100vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+/* Ensure proper collapse panel behavior */
+.ant-collapse-content {
+  overflow: visible !important;
+}
+
+
+/* Add these new styles for the file listing container */
+.file-listing {
+  padding: 8px 0;
+  cursor: pointer;
+  color: #1890ff;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  font-size: 0.9em;
+  line-height: 1.4;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+}
+
+.file-listing:hover {
+  background-color: #f5f5f5;
+}
+
+/* Style for the file name text */
+.file-name {
+  white-space: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 10px;
+  width: 100%;
+}
+
+/* Update Ant Design's collapse panel styles */
+.ant-collapse-content-box {
+  padding: 0 !important;
+}
+
+.ant-collapse-header {
+  font-weight: 500;
+  background-color: #fafafa;
+}
+
+/* Add styles for the body part headers */
+.body-part-header {
+  font-weight: 500;
+  padding: 8px 12px;
+  background-color: #f5f5f5;
+  border-bottom: 1px solid #e8e8e8;
+  margin: 0;
+}
+
+/* Add tooltip styles for long file names */
+.file-name-tooltip {
+  max-width: 300px;
+  word-wrap: break-word;
+  visibility: hidden;
+  background-color: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  text-align: center;
+  padding: 5px 10px;
+  border-radius: 4px;
+  position: absolute;
+  z-index: 1500;
+  font-size: 0.85em;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.file-listing:hover .file-name-tooltip {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Add styles for optional file icon */
+.file-icon {
+  min-width: 16px;
+  margin-right: 8px;
+  color: #1890ff;
+}
+
+/* Ensure the sider content doesn't overflow */
+.ant-layout-sider-children {
+  overflow-x: hidden;
+}
+
+/* Style scrollbar for better visibility */
+.ant-layout-sider::-webkit-scrollbar {
+  width: 6px;
+}
+
+.ant-layout-sider::-webkit-scrollbar-thumb {
+  background-color: #d9d9d9;
+  border-radius: 3px;
+}
+
+.ant-layout-sider::-webkit-scrollbar-track {
+  background-color: #f0f0f0;
+}

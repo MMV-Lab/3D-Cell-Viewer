@@ -757,8 +757,9 @@ const VolumeViewer = () => {
     };
 
     return (
-        <Layout style={{ height: '100vh' }}>
-            <Sider width={300} style={{ background: '#fff', padding: '20px' }}>
+        <Layout style={{ height: '100vh', display: 'flex' }}>
+            <div style={{ width: '300px', overflowY: 'auto', height: '100vh', position: 'relative', zIndex: 1 }}>
+            <Sider width="100%" style={{ background: '#fff', padding: '20px', paddingBottom: '60px' }}>
                 <Collapse defaultActiveKey={['1']}>
                     {/* Render Mode */}
                     <Panel header="Render Mode" key="1">
@@ -1151,12 +1152,26 @@ const VolumeViewer = () => {
                 <div>
                     <Collapse accordion>
                         {Object.keys(fileData).map((bodyPart) => (
-                            <Panel header={bodyPart} key={bodyPart}>
+                            <Panel 
+                                header={<span className="body-part-header">{bodyPart}</span>} 
+                                key={bodyPart}
+                            >
                                 {fileData[bodyPart].map((file) => (
-                                    <div key={file} style={{ padding: '8px 0', cursor: 'pointer', color: 'blue' }}
+                                    <div 
+                                        key={file} 
+                                        className="file-listing"
                                         onClick={() => handleFileSelect(bodyPart, file)}
                                     >
-                                        {file}
+                                        <span className="file-icon">
+                                            📄
+                                        </span>
+                                        <span className="file-name">
+                                            {file}
+                                        </span>
+                                        {/* Tooltip for long file names */}
+                                        <span className="file-name-tooltip">
+                                            {file}
+                                        </span>
                                     </div>
                                 ))}
                             </Panel>
@@ -1164,8 +1179,9 @@ const VolumeViewer = () => {
                     </Collapse>
                 </div>
             </Sider>
+            </div>
     
-            <Content style={{ padding: 0, margin: 0, position: 'relative' }}>
+            <Content style={{ overflowY: 'auto', height: '100vh', flex: 1, padding: 0, position: 'relative' }}>
                 <Spin spinning={isLoading} tip="Loading volume data..." size="large">
                     <div id="volume-viewer" ref={viewerRef} style={{ width: '100%', height: '100vh', position: 'relative' }}></div>
                 </Spin>
