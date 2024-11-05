@@ -115,7 +115,7 @@ export const myState = {
     "https://animatedcell-test-data.s3.us-west-2.amazonaws.com/timelapse/test_parent_T49.ome_%%_atlas.json"
   ),
   density: 12.5,
-  maskAlpha: 1.0,
+  maskAlpha: 0.0,
   exposure: 0.75,
   aperture: 0.0,
   fov: 20,

@@ -17,6 +17,7 @@ import { useConstructor } from './useConstructor';
 import { Slider, Switch, InputNumber, Row, Col, Collapse, Layout, Button, Select, Input, Tooltip, Spin } from 'antd';
 import axios from 'axios';
 import { API_URL } from '../config'; // Importing API_URL from your config
+import { ALPHA_MASK_SLIDER_3D_DEFAULT, BRIGHTNESS_SLIDER_LEVEL_DEFAULT, DENSITY_SLIDER_LEVEL_DEFAULT, LEVELS_SLIDER_DEFAULT, LUT_MAX_PERCENTILE, LUT_MIN_PERCENTILE, PRESET_COLORS_0, PRESET_COLOR_MAP } from './constants';
 
 // Utility function to concatenate arrays
 const concatenateArrays = (arrays) => {
@@ -37,6 +38,7 @@ const { Vector3 } = THREE;
 
 const VolumeViewer = () => {
     const viewerRef = useRef(null);
+    const volumeRef = useRef(null);
     const view3D = useConstructor(() => new View3d({ parentElement: viewerRef.current }));
     const loadContext = useConstructor(() => loaderContext);
 
@@ -98,48 +100,95 @@ const VolumeViewer = () => {
     const [lightIntensity, setLightIntensity] = useState(myState.lightIntensity);
     const [lightTheta, setLightTheta] = useState(myState.lightTheta);
     const [lightPhi, setLightPhi] = useState(myState.lightPhi);
+    const [currentPreset, setCurrentPreset] = useState(0); // Default preset
+    const [settings, setSettings] = useState({
+        maskAlpha: ALPHA_MASK_SLIDER_3D_DEFAULT[0],
+        brightness: BRIGHTNESS_SLIDER_LEVEL_DEFAULT[0],
+        density: DENSITY_SLIDER_LEVEL_DEFAULT[0],
+        levels: LEVELS_SLIDER_DEFAULT,
+    });
+
 
     const densitySliderToView3D = (density) => density / 50.0;
 
     const onChannelDataArrived = (v, channelIndex) => {
+        const histogram = v.getHistogram(channelIndex);
+        const hmin = histogram.findBinOfPercentile(LUT_MIN_PERCENTILE);
+        const hmax = histogram.findBinOfPercentile(LUT_MAX_PERCENTILE);
+        
+        const channelColor = PRESET_COLORS_0[channelIndex % PRESET_COLORS_0.length];
+        
+        // Create control points for smoother gradients
+        const controlPoints = [
+            { x: 0, opacity: 0, color: channelColor },
+            { x: hmin, opacity: 0.1, color: channelColor },
+            { x: (hmin + hmax) / 2, opacity: 0.5, color: channelColor },
+            { x: hmax, opacity: 1.0, color: channelColor },
+            { x: 255, opacity: 1.0, color: channelColor }
+        ];
+    
+        // Create and set LUT
+        const lutObject = new Lut().createFromControlPoints(controlPoints);
+        v.setLut(channelIndex, lutObject);
+        v.setColorPalette(channelIndex, channelColor);
+    
         view3D.onVolumeData(v, [channelIndex]);
+        
         if (channels[channelIndex]) {
             view3D.setVolumeChannelEnabled(v, channelIndex, channels[channelIndex].enabled);
+            view3D.setVolumeChannelOptions(v, channelIndex, {
+                color: channelColor,
+                opacity: 1.0,
+                brightness: 1.2,
+                contrast: 1.1
+            });
         }
+        
         view3D.updateActiveChannels(v);
         view3D.updateLuts(v);
+        
         if (v.isLoaded()) {
             console.log("Volume " + v.name + " is loaded");
         }
         view3D.redraw();
     };
 
+    // Modify your onVolumeCreated function
     const onVolumeCreated = (volume) => {
-        initializeChannelOptions(volume);
+        volumeRef.current = volume;
+        // Set default channel colors
+        volume.channelColorsDefault = volume.imageInfo.channelNames.map((_, index) => 
+            PRESET_COLORS_0[index % PRESET_COLORS_0.length]
+        );
         
-        // volume.channelColorsDefault = volume.imageInfo.channelNames.map(() => DEFAULT_CHANNEL_COLOR);
-
         setCurrentVolume(volume);
         view3D.removeAllVolumes();
         view3D.addVolume(volume);
 
-
-        // Log the channel colors to verify the change
-        console.log("Channel Default Colors:", volume.channelColors);
-
-
         setInitialRenderMode();
         showChannelUI(volume);
+        
         view3D.updateActiveChannels(volume);
         view3D.updateLuts(volume);
         view3D.updateLights(lights);
-        view3D.updateDensity(volume, densitySliderToView3D(density));
-        view3D.updateMaskAlpha(volume, maskAlpha);
+        // Apply initial settings
+        const alphaValue = 1 - (settings.maskAlpha / 100);
+        view3D.updateMaskAlpha(volumeRef.current, alphaValue);
+        
+        const brightnessValue = settings.brightness / 100;
+        view3D.updateExposure(brightnessValue);
+        
+        const densityValue = settings.density / 100;
+        view3D.updateDensity(volume, densityValue);
+        
+        const [min, mid, max] = settings.levels.map(v => v / 255);
+        const diff = max - min;
+        const x = (mid - min) / diff;
+        const scale = 4 * x * x;
+        view3D.setGamma(volume, min, scale, max);      
         view3D.setRayStepSizes(volume, primaryRay, secondaryRay);
-        view3D.updateExposure(exposure);
         view3D.updateCamera(fov, focalDistance, aperture);
-        view3D.updateActiveChannels(volume)
-        // view3D.updatePixelSamplingRate(samplingRate);
+        view3D.updateActiveChannels(volume);
         view3D.redraw();
     };
 
@@ -245,18 +294,18 @@ const VolumeViewer = () => {
     }, [viewerRef, view3D]);
 
     useEffect(() => {
-        if (currentVolume) {
-            view3D.updateDensity(currentVolume, densitySliderToView3D(density));
-            view3D.redraw();
-        }
-    }, [density]);
+        if (!currentVolume || !view3D) return;
+        const densityValue = settings.density / 100;
+        view3D.updateDensity(currentVolume, densityValue);
+        view3D.redraw();
+    }, [settings.density]);
 
     useEffect(() => {
-        if (currentVolume) {
-            view3D.updateExposure(exposure);
-            view3D.redraw();
-        }
-    }, [currentVolume, exposure, view3D]);
+        if (!view3D) return;
+        const brightnessValue = settings.brightness / 100;
+        view3D.updateExposure(brightnessValue);
+        view3D.redraw();
+    }, [settings.brightness])
 
     useEffect(() => {
         view3D.setVolumeRenderMode(isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
@@ -318,11 +367,14 @@ const VolumeViewer = () => {
     }, [flipX, flipY, flipZ]);
 
     useEffect(() => {
-        if (currentVolume) {
-            const gammaValues = gammaSliderToImageValues(gamma);
-            view3D.setGamma(currentVolume, gammaValues[0], gammaValues[1], gammaValues[2]);
-        }
-    }, [gamma]);
+        if (!currentVolume || !view3D) return;
+        const [min, mid, max] = settings.levels.map(v => v / 255);
+        const diff = max - min;
+        const x = (mid - min) / diff;
+        const scale = 4 * x * x;
+        view3D.setGamma(currentVolume, min, scale, max);
+        view3D.redraw();
+    }, [settings.levels]);
 
     useEffect(() => {
         if (currentVolume) {
@@ -356,12 +408,13 @@ const VolumeViewer = () => {
     }, [primaryRay, secondaryRay]);
 
     useEffect(() => {
-        if (currentVolume) {
-            view3D.updateMaskAlpha(currentVolume, maskAlpha);
-            view3D.updateActiveChannels(currentVolume);
-            view3D.redraw();
-        }
-    }, [maskAlpha])
+        if (!currentVolume || !view3D) return;
+        const alphaValue = 1 - (settings.maskAlpha / 100.0);
+        view3D.updateMaskAlpha(currentVolume, alphaValue);
+        view3D.updateActiveChannels(currentVolume);
+        // view3D.redraw();
+        console.log("maskAlpha", settings.maskAlpha);
+    }, [settings.maskAlpha]);
 
     useEffect(() => {
         if (view3D && lights[0]) {
@@ -414,26 +467,49 @@ const VolumeViewer = () => {
 
     const DEFAULT_CHANNEL_COLOR = [128, 128, 128]; // Medium gray
 
-      const showChannelUI = (volume) => {
-        const channelGui = volume.imageInfo.channelNames.map((name, index) => ({
-            name,
-            enabled: index < 3,
-            colorD: volume.channelColorsDefault[index] || DEFAULT_CHANNEL_COLOR,
-            colorS: [0, 0, 0],
-            colorE: [0, 0, 0],
-            glossiness: 0,
-            window: 1,
-            level: 0.5,
-            isovalue: 128,
-            isosurface: false
-        }));
+    // Modify your showChannelUI function
+    const showChannelUI = (volume) => {
+        const currentPresetColors = PRESET_COLOR_MAP[currentPreset].colors;
+        
+        const channelGui = volume.imageInfo.channelNames.map((name, index) => {
+            const channelColor = currentPresetColors[index % currentPresetColors.length];
+            
+            return {
+                name,
+                enabled: index < 3,
+                colorD: channelColor,
+                colorS: [0, 0, 0],
+                colorE: [0, 0, 0],
+                glossiness: 0,
+                window: 1,
+                level: 0.5,
+                isovalue: 128,
+                isosurface: false,
+                brightness: 1.2,
+                contrast: 1.1
+            };
+        });
+        
         setChannels(channelGui);
     
-        // Log channel colors for verification
+        // Force update channel materials
         channelGui.forEach((channel, index) => {
-            console.log(`Channel ${index} (${channel.name}) color:`, channel.colorD);
+            if (channel.enabled) {
+                view3D.updateChannelMaterial(
+                    volume,
+                    index,
+                    channel.colorD,
+                    channel.colorS,
+                    channel.colorE,
+                    channel.glossiness
+                );
+            }
         });
+    
+        view3D.updateMaterial(volume);
+        view3D.redraw();
     };
+    
 
     const updateChannel = (index, key, value) => {
         const updatedChannels = [...channels];
@@ -683,15 +759,28 @@ const VolumeViewer = () => {
     const rgbToHex = (r, g, b) => {
         const toHex = (component) => {
             const hex = Math.round(component).toString(16);
-            return hex.length === 1 ? '0' + hex : hex; // Ensures two digits
+            return hex.length === 1 ? '0' + hex : hex;
         };
         
-        // Ensure r, g, b are valid numbers and fall back to 0 if undefined or invalid
-        r = isNaN(r) ? 0 : r;
-        g = isNaN(g) ? 0 : g;
-        b = isNaN(b) ? 0 : b;
+        // Ensure values are between 0-255
+        r = Math.min(255, Math.max(0, Math.round(r)));
+        g = Math.min(255, Math.max(0, Math.round(g)));
+        b = Math.min(255, Math.max(0, Math.round(b)));
     
         return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+    };
+
+    const hexToRgb = (hex) => {
+        // Remove the hash if present
+        hex = hex.replace(/^#/, '');
+        
+        // Parse the hex values
+        const bigint = parseInt(hex, 16);
+        const r = (bigint >> 16) & 255;
+        const g = (bigint >> 8) & 255;
+        const b = bigint & 255;
+        
+        return [r, g, b];
     };
 
     const updatePixelSamplingRate = (rate) => {
@@ -756,6 +845,46 @@ const VolumeViewer = () => {
         view3D.redraw();
     };
 
+    const applyColorPreset = (presetIndex) => {
+        if (!currentVolume) return;
+    
+        const preset = PRESET_COLOR_MAP[presetIndex].colors;
+        
+        const updatedChannels = channels.map((channel, index) => {
+            const newColor = preset[index % preset.length];
+            return {
+                ...channel,
+                colorD: newColor
+            };
+        });
+    
+        // Update state
+        setChannels(updatedChannels);
+        setCurrentPreset(presetIndex);
+    
+        // Update each channel's material
+        updatedChannels.forEach((channel, index) => {
+            view3D.updateChannelMaterial(
+                currentVolume,
+                index,
+                channel.colorD,
+                channel.colorS,
+                channel.colorE,
+                channel.glossiness
+            );
+        });
+    
+        view3D.updateMaterial(currentVolume);
+        view3D.redraw();
+    };
+
+    const updateSetting = (key, value) => {
+        setSettings(prev => ({
+            ...prev,
+            [key]: value
+        }));
+    };
+
     return (
         <Layout style={{ height: '100vh', display: 'flex' }}>
             <div style={{ width: '300px', overflowY: 'auto', height: '100vh', position: 'relative', zIndex: 1 }}>
@@ -773,12 +902,22 @@ const VolumeViewer = () => {
     
                     {/* Density */}
                     <Panel header="Density" key="2">
-                        <Slider min={0} max={100} step={0.1} value={density} onChange={setDensity} />
+                        <Slider 
+                            min={0} 
+                            max={100} 
+                            value={settings.density}
+                            onChange={(val) => updateSetting('density', val)}
+                        />
                     </Panel>
     
                     {/* Mask Alpha */}
                     <Panel header="Mask Alpha" key="2_1">
-                        <Slider min={0} max={1} step={0.01} value={maskAlpha} onChange={setMaskAlpha} />
+                        <Slider 
+                            min={0} 
+                            max={100} 
+                            value={settings.maskAlpha}
+                            onChange={(val) => updateSetting('maskAlpha', val)}
+                        />
                     </Panel>
     
                     {/* Ray Step Sizes */}
@@ -791,7 +930,12 @@ const VolumeViewer = () => {
     
                     {/* Exposure */}
                     <Panel header="Exposure" key="3">
-                        <Slider min={0} max={1} step={0.01} value={exposure} onChange={setExposure} />
+                        <Slider 
+                            min={0} 
+                            max={100}
+                            value={settings.brightness}
+                            onChange={(val) => updateSetting('brightness', val)}
+                        />
                     </Panel>
     
                     {/* Camera Settings */}
@@ -994,28 +1138,56 @@ const VolumeViewer = () => {
                         <Row>
                             <Col span={8}>Min</Col>
                             <Col span={16}>
-                                <InputNumber min={0} max={255} value={gamma[0]}
-                                    onChange={(value) => updateGamma([value, gamma[1], gamma[2]])} />
+                                <InputNumber 
+                                    min={0} 
+                                    max={255} 
+                                    value={settings.levels[0]}
+                                    onChange={(value) => updateSetting('levels', [value, settings.levels[1], settings.levels[2]])} 
+                                />
                             </Col>
                         </Row>
                         <Row>
                             <Col span={8}>Mid</Col>
                             <Col span={16}>
-                                <InputNumber min={0} max={255} value={gamma[1]}
-                                    onChange={(value) => updateGamma([gamma[0], value, gamma[2]])} />
+                                <InputNumber 
+                                    min={0} 
+                                    max={255} 
+                                    value={settings.levels[1]}
+                                    onChange={(value) => updateSetting('levels', [settings.levels[0], value, settings.levels[2]])} 
+                                />
                             </Col>
                         </Row>
                         <Row>
                             <Col span={8}>Max</Col>
                             <Col span={16}>
-                                <InputNumber min={0} max={255} value={gamma[2]}
-                                    onChange={(value) => updateGamma([gamma[0], gamma[1], value])} />
+                                <InputNumber 
+                                    min={0} 
+                                    max={255} 
+                                    value={settings.levels[2]}
+                                    onChange={(value) => updateSetting('levels', [settings.levels[0], settings.levels[1], value])} 
+                                />
                             </Col>
                         </Row>
                     </Panel>
     
                     {/* Channels */}
                     <Panel header="Channels" key="8">
+                        <Row style={{ marginBottom: '16px' }}>
+                            <Col span={12}>Color Preset</Col>
+                            <Col span={12}>
+                                <Select 
+                                    value={currentPreset}
+                                    style={{ width: '100%' }}
+                                    onChange={applyColorPreset}
+                                >
+                                    {PRESET_COLOR_MAP.map(preset => (
+                                        <Option key={preset.key} value={preset.key}>
+                                            {preset.name}
+                                        </Option>
+                                    ))}
+                                </Select>
+                            </Col>
+                        </Row>
                         {channels.map((channel, index) => (
                             <div key={index}>
                                 <Row>
@@ -1054,8 +1226,14 @@ const VolumeViewer = () => {
                                 <Row>
                                     <Col span={12}>Diffuse Color</Col>
                                     <Col span={12}>
-                                        <Input type="color" value={rgbToHex(channel.colorD[0], channel.colorD[1], channel.colorD[2])}
-                                            onChange={(e) => updateChannel(index, 'colorD', e.target.value.match(/.{1,2}/g).map(c => parseInt(c, 16)))} />
+                                    <Input
+                                    type="color"
+                                    value={rgbToHex(channel.colorD[0], channel.colorD[1], channel.colorD[2])}
+                                    onChange={(e) => {
+                                        const rgbColor = hexToRgb(e.target.value);
+                                        updateChannel(index, 'colorD', rgbColor);
+                                    }}
+                                />
                                     </Col>
                                 </Row>
                                 <Row>
