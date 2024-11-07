@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
     LoadSpec,
     View3d,
@@ -115,6 +115,22 @@ const VolumeViewer = () => {
         selectedColorPalette: 0,
         axisClip: { x: [0, 1], y: [0, 1], z: [0, 1] },
     })
+   
+    // Add new state for persisting view settings
+    const [persistentSettings, setPersistentSettings] = useState({
+        mode: '3D', // Default to 3D mode
+        channelSettings: {}, // Store channel-specific settings
+        density: 50,
+        brightness: 70,
+        maskAlpha: 50,
+        primaryRay: 1,
+        secondaryRay: 1,
+        clipRegion: {
+            xmin: 0, xmax: 1,
+            ymin: 0, ymax: 1,
+            zmin: 0, zmax: 1
+        }
+    });
 
     const [isoSurfaceSettings, setIsoSurfaceSettings] = useState({
         isosurfaceOpacityMax: ISOSURFACE_OPACITY_SLIDER_MAX,
@@ -171,26 +187,26 @@ const VolumeViewer = () => {
         }
     
         volumeRef.current = volume;
-        
-        // 1. First, set up volume in viewer
         view3D.removeAllVolumes();
         
-        // 2. Initialize channels with default colors
+        // Initialize channels with persisted settings if available
         const channelNames = volume.imageInfo.channelNames || [];
         const newChannels = channelNames.map((name, index) => {
+            const persistedChannel = persistentSettings.channelSettings[index] || {};
             const defaultColor = PRESET_COLORS_0[index % PRESET_COLORS_0.length];
+            
             return {
                 name,
-                enabled: index < 3, // First 3 channels enabled by default
-                color: defaultColor,
-                isosurfaceEnabled: false,
-                isovalue: 128,
-                opacity: 1.0,
+                enabled: persistedChannel.enabled ?? (index < 3),
+                color: persistedChannel.color || defaultColor,
+                isosurfaceEnabled: persistedChannel.isosurfaceEnabled ?? false,
+                isovalue: persistedChannel.isovalue ?? 128,
+                opacity: persistedChannel.opacity ?? 1.0,
                 lut: ["p50", "p98"]
             };
         });
         
-        // 3. Add volume with initial channel settings
+        // Add volume with persisted settings
         view3D.addVolume(volume, {
             channels: newChannels.map(ch => ({
                 enabled: ch.enabled,
@@ -201,6 +217,19 @@ const VolumeViewer = () => {
             }))
         });
     
+        // Apply persisted view mode and settings
+        setCameraMode(persistentSettings.mode);
+        view3D.setCameraMode(persistentSettings.mode);
+        
+        // Apply other persisted settings
+        updateSetting('density', persistentSettings.density);
+        updateSetting('brightness', persistentSettings.brightness);
+        updateSetting('maskAlpha', persistentSettings.maskAlpha);
+        setPrimaryRay(persistentSettings.primaryRay);
+        setSecondaryRay(persistentSettings.secondaryRay);
+        setClipRegion(persistentSettings.clipRegion);
+
+
         // 4. Apply initial volume settings
         // Mask alpha
         const alphaValue = 1 - (settings.maskAlpha / 100);
@@ -220,8 +249,7 @@ const VolumeViewer = () => {
         const x = (mid - min) / diff;
         const scale = 4 * x * x;
         view3D.setGamma(volume, min, scale, max);
-    
-        // 5. Initialize LUTs for each channel
+
         channelNames.forEach((_, index) => {
             if (volume.getHistogram) {
                 const histogram = volume.getHistogram(index);
@@ -250,8 +278,8 @@ const VolumeViewer = () => {
                 }
             }
         });
-    
-        // 6. Check for and set up segmentation mask
+
+        // Initialize masks and LUTs
         const segIndex = channelNames.findIndex(name => 
             name === CELL_SEGMENTATION_CHANNEL_NAME
         );
@@ -259,12 +287,10 @@ const VolumeViewer = () => {
             view3D.setVolumeChannelAsMask(volume, segIndex);
         }
     
-        // 7. Update viewer state
         view3D.setVolumeRenderMode(settings.pathTrace ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
         view3D.updateActiveChannels(volume);
         view3D.updateLuts(volume);
     
-        // 8. Store state
         setChannels(newChannels);
         setCurrentVolume(volume);
         view3D.redraw();
@@ -790,6 +816,10 @@ const VolumeViewer = () => {
 
     const setCameraModeHandler = (mode) => {
         setCameraMode(mode);
+        setPersistentSettings(prev => ({
+            ...prev,
+            mode: mode
+        }));
     };
 
     const toggleTurntable = () => {
@@ -1062,6 +1092,44 @@ const VolumeViewer = () => {
         console.log('Slice changed:', newSlice);
     };
 
+    // Function to save current view settings
+    const saveCurrentSettings = useCallback(() => {
+        setPersistentSettings(prev => ({
+            ...prev,
+            mode: cameraMode,
+            density: settings.density,
+            brightness: settings.brightness,
+            maskAlpha: settings.maskAlpha,
+            primaryRay: primaryRay,
+            secondaryRay: secondaryRay,
+            clipRegion: clipRegion,
+            channelSettings: channels.reduce((acc, channel, index) => {
+                acc[index] = {
+                    enabled: channel.enabled,
+                    color: channel.color,
+                    isosurfaceEnabled: channel.isosurfaceEnabled,
+                    isovalue: channel.isovalue,
+                    opacity: channel.opacity
+                };
+                return acc;
+            }, {})
+        }));
+    }, [
+        cameraMode, settings, primaryRay, secondaryRay, 
+        clipRegion, channels
+    ]);
+
+     // Add effect to save settings when they change
+     useEffect(() => {
+        if (currentVolume) {
+            saveCurrentSettings();
+        }
+    }, [
+        cameraMode, settings.density, settings.brightness, 
+        settings.maskAlpha, primaryRay, secondaryRay, 
+        clipRegion, channels, saveCurrentSettings
+    ]);
+
     return (
         <Layout style={{ height: '100vh', display: 'flex' }}>
             <div style={{ width: '300px', overflowY: 'auto', height: '100vh', position: 'relative', zIndex: 1 }}>
@@ -1287,7 +1355,7 @@ const VolumeViewer = () => {
 
                     {/* Planar Slice Player Panel */}
                     {cameraMode !== '3D' && (
-                            <Panel header="Slice Navigation" key="slice-player">
+                            <Panel header="Playback" key="slice-player">
                                 <PlanarSlicePlayer
                                     currentVolume={currentVolume}
                                     cameraMode={cameraMode}
@@ -1503,42 +1571,6 @@ const VolumeViewer = () => {
                     </Panel>
 
     
-                    {/* Playback */}
-                    <Panel header="Playback" key="10">
-                        <Row>
-                            <Button onClick={playTimeSeries} disabled={isPlaying}>Play</Button>
-                            <Button onClick={pauseTimeSeries} disabled={!isPlaying}>Pause</Button>
-                            <Button onClick={() => goToFrame(currentFrame + 1)}>Forward</Button>
-                            <Button onClick={() => goToFrame(currentFrame - 1)}>Backward</Button>
-                        </Row>
-                        <Row>
-                            <Col span={12}>Frame</Col>
-                            <Col span={12}>
-                                <InputNumber min={0} max={totalFrames - 1} value={currentFrame} onChange={goToFrame} />
-                            </Col>
-                        </Row>
-                        <Row>
-                            <Col span={12}>Z Slice</Col>
-                            <Col span={12}>
-                                <InputNumber
-                                    id="zValue"
-                                    min={0}
-                                    max={currentVolume ? currentVolume.imageInfo.volumeSize.z - 1 : 0}
-                                    value={currentVolume ? currentVolume.currentZSlice : 0}
-                                    onChange={goToZSlice}
-                                />
-                            </Col>
-                        </Row>
-                        <Row>
-                            <Slider
-                                id="zSlider"
-                                min={0}
-                                max={currentVolume ? currentVolume.imageInfo.volumeSize.z - 1 : 0}
-                                value={currentVolume ? currentVolume.currentZSlice : 0}
-                                onChange={goToZSlice}
-                            />
-                        </Row>
-                    </Panel>
                 </Collapse>
     
                 <div>
