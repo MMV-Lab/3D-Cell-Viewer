@@ -17,7 +17,8 @@ import { useConstructor } from './useConstructor';
 import { Slider, Switch, InputNumber, Row, Col, Collapse, Layout, Button, Select, Input, Tooltip, Spin } from 'antd';
 import axios from 'axios';
 import { API_URL } from '../config'; // Importing API_URL from your config
-import { ALPHA_MASK_SLIDER_3D_DEFAULT, BRIGHTNESS_SLIDER_LEVEL_DEFAULT, DENSITY_SLIDER_LEVEL_DEFAULT, LEVELS_SLIDER_DEFAULT, LUT_MAX_PERCENTILE, LUT_MIN_PERCENTILE, PRESET_COLORS_0, PRESET_COLOR_MAP } from './constants';
+import { ALPHA_MASK_SLIDER_3D_DEFAULT, BRIGHTNESS_SLIDER_LEVEL_DEFAULT, CELL_SEGMENTATION_CHANNEL_NAME, DENSITY_SLIDER_LEVEL_DEFAULT, ISOSURFACE_OPACITY_SLIDER_MAX, LEVELS_SLIDER_DEFAULT, LUT_MAX_PERCENTILE, LUT_MIN_PERCENTILE, PRESET_COLORS_0, PRESET_COLOR_MAP, VIEWER_3D_SETTING } from './constants';
+import PlanarSlicePlayer from './PlanarSlicePlayer';
 
 // Utility function to concatenate arrays
 const concatenateArrays = (arrays) => {
@@ -102,95 +103,173 @@ const VolumeViewer = () => {
     const [lightPhi, setLightPhi] = useState(myState.lightPhi);
     const [currentPreset, setCurrentPreset] = useState(0); // Default preset
     const [settings, setSettings] = useState({
-        maskAlpha: ALPHA_MASK_SLIDER_3D_DEFAULT[0],
-        brightness: BRIGHTNESS_SLIDER_LEVEL_DEFAULT[0],
-        density: DENSITY_SLIDER_LEVEL_DEFAULT[0],
-        levels: LEVELS_SLIDER_DEFAULT,
+        maskAlpha: ALPHA_MASK_SLIDER_3D_DEFAULT[0], // 50
+        brightness: BRIGHTNESS_SLIDER_LEVEL_DEFAULT[0], // 70
+        density: DENSITY_SLIDER_LEVEL_DEFAULT[0], // 50
+        levels: LEVELS_SLIDER_DEFAULT, // [35.0, 140.0, 255.0]
+        autoRotate: false,
+        pathTrace: false,
+        renderMode: RENDERMODE_RAYMARCH,
+        colorizeEnabled: false,
+        colorizeAlpha: 1.0,
+        selectedColorPalette: 0,
+        axisClip: { x: [0, 1], y: [0, 1], z: [0, 1] },
+    })
+
+    const [isoSurfaceSettings, setIsoSurfaceSettings] = useState({
+        isosurfaceOpacityMax: ISOSURFACE_OPACITY_SLIDER_MAX,
+        defaultIsovalue: 128,
+        defaultOpacity: 1.0
     });
 
 
     const densitySliderToView3D = (density) => density / 50.0;
 
-    const onChannelDataArrived = (v, channelIndex) => {
-        const histogram = v.getHistogram(channelIndex);
+    const onChannelDataArrived = (volume, channelIndex) => {
+        if (volume !== volumeRef.current) return;
+    
+        const histogram = volume.getHistogram(channelIndex);
+        if (!histogram) return;
+    
+        // Find percentile values
         const hmin = histogram.findBinOfPercentile(LUT_MIN_PERCENTILE);
         const hmax = histogram.findBinOfPercentile(LUT_MAX_PERCENTILE);
         
-        const channelColor = PRESET_COLORS_0[channelIndex % PRESET_COLORS_0.length];
+        // Create LUT using the Lut class
+        const lut = new Lut();
+        const lutData = lut.createFromMinMax(hmin, hmax);
         
-        // Create control points for smoother gradients
-        const controlPoints = [
-            { x: 0, opacity: 0, color: channelColor },
-            { x: hmin, opacity: 0.1, color: channelColor },
-            { x: (hmin + hmax) / 2, opacity: 0.5, color: channelColor },
-            { x: hmax, opacity: 1.0, color: channelColor },
-            { x: 255, opacity: 1.0, color: channelColor }
-        ];
+        // Set the LUT for the channel
+        volume.setLut(channelIndex, lutData);
     
-        // Create and set LUT
-        const lutObject = new Lut().createFromControlPoints(controlPoints);
-        v.setLut(channelIndex, lutObject);
-        v.setColorPalette(channelIndex, channelColor);
-    
-        view3D.onVolumeData(v, [channelIndex]);
+        view3D.onVolumeData(volume, [channelIndex]);
         
         if (channels[channelIndex]) {
-            view3D.setVolumeChannelEnabled(v, channelIndex, channels[channelIndex].enabled);
-            view3D.setVolumeChannelOptions(v, channelIndex, {
-                color: channelColor,
+            view3D.setVolumeChannelEnabled(volume, channelIndex, channels[channelIndex].enabled);
+            view3D.setVolumeChannelOptions(volume, channelIndex, {
+                color: channels[channelIndex].color,
                 opacity: 1.0,
                 brightness: 1.2,
                 contrast: 1.1
             });
         }
         
-        view3D.updateActiveChannels(v);
-        view3D.updateLuts(v);
+        view3D.updateActiveChannels(volume);
+        view3D.updateLuts(volume);
         
-        if (v.isLoaded()) {
-            console.log("Volume " + v.name + " is loaded");
+        if (volume.isLoaded()) {
+            console.log("Volume " + volume.name + " is loaded");
         }
         view3D.redraw();
     };
 
     // Modify your onVolumeCreated function
     const onVolumeCreated = (volume) => {
+        if (!volume || !volume.imageInfo) {
+            console.error("Invalid volume data");
+            return;
+        }
+    
         volumeRef.current = volume;
-        // Set default channel colors
-        volume.channelColorsDefault = volume.imageInfo.channelNames.map((_, index) => 
-            PRESET_COLORS_0[index % PRESET_COLORS_0.length]
-        );
         
-        setCurrentVolume(volume);
+        // 1. First, set up volume in viewer
         view3D.removeAllVolumes();
-        view3D.addVolume(volume);
-
-        setInitialRenderMode();
-        showChannelUI(volume);
         
-        view3D.updateActiveChannels(volume);
-        view3D.updateLuts(volume);
-        view3D.updateLights(lights);
-        // Apply initial settings
+        // 2. Initialize channels with default colors
+        const channelNames = volume.imageInfo.channelNames || [];
+        const newChannels = channelNames.map((name, index) => {
+            const defaultColor = PRESET_COLORS_0[index % PRESET_COLORS_0.length];
+            return {
+                name,
+                enabled: index < 3, // First 3 channels enabled by default
+                color: defaultColor,
+                isosurfaceEnabled: false,
+                isovalue: 128,
+                opacity: 1.0,
+                lut: ["p50", "p98"]
+            };
+        });
+        
+        // 3. Add volume with initial channel settings
+        view3D.addVolume(volume, {
+            channels: newChannels.map(ch => ({
+                enabled: ch.enabled,
+                color: ch.color,
+                isosurfaceEnabled: ch.isosurfaceEnabled,
+                isovalue: ch.isovalue,
+                isosurfaceOpacity: ch.opacity
+            }))
+        });
+    
+        // 4. Apply initial volume settings
+        // Mask alpha
         const alphaValue = 1 - (settings.maskAlpha / 100);
-        view3D.updateMaskAlpha(volumeRef.current, alphaValue);
-        
+        view3D.updateMaskAlpha(volume, alphaValue);
+    
+        // Brightness
         const brightnessValue = settings.brightness / 100;
         view3D.updateExposure(brightnessValue);
         
+        // Density
         const densityValue = settings.density / 100;
         view3D.updateDensity(volume, densityValue);
         
+        // Gamma levels
         const [min, mid, max] = settings.levels.map(v => v / 255);
         const diff = max - min;
         const x = (mid - min) / diff;
         const scale = 4 * x * x;
-        view3D.setGamma(volume, min, scale, max);      
-        view3D.setRayStepSizes(volume, primaryRay, secondaryRay);
-        view3D.updateCamera(fov, focalDistance, aperture);
+        view3D.setGamma(volume, min, scale, max);
+    
+        // 5. Initialize LUTs for each channel
+        channelNames.forEach((_, index) => {
+            if (volume.getHistogram) {
+                const histogram = volume.getHistogram(index);
+                if (histogram) {
+                    // Find percentile values
+                    const hmin = histogram.findBinOfPercentile(LUT_MIN_PERCENTILE);
+                    const hmax = histogram.findBinOfPercentile(LUT_MAX_PERCENTILE);
+                    
+                    // Create LUT using the Lut class
+                    const lut = new Lut();
+                    const lutData = lut.createFromMinMax(hmin, hmax);
+                    
+                    // Set the LUT for the channel
+                    volume.setLut(index, lutData);
+    
+                    // Save control points if needed
+                    const controlPoints = [
+                        { x: 0, opacity: 0, color: newChannels[index].color },
+                        { x: hmin, opacity: 0.1, color: newChannels[index].color },
+                        { x: (hmin + hmax) / 2, opacity: 0.5, color: newChannels[index].color },
+                        { x: hmax, opacity: 1.0, color: newChannels[index].color },
+                        { x: 255, opacity: 1.0, color: newChannels[index].color }
+                    ];
+                    
+                    newChannels[index].controlPoints = controlPoints;
+                }
+            }
+        });
+    
+        // 6. Check for and set up segmentation mask
+        const segIndex = channelNames.findIndex(name => 
+            name === CELL_SEGMENTATION_CHANNEL_NAME
+        );
+        if (segIndex !== -1) {
+            view3D.setVolumeChannelAsMask(volume, segIndex);
+        }
+    
+        // 7. Update viewer state
+        view3D.setVolumeRenderMode(settings.pathTrace ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
         view3D.updateActiveChannels(volume);
+        view3D.updateLuts(volume);
+    
+        // 8. Store state
+        setChannels(newChannels);
+        setCurrentVolume(volume);
         view3D.redraw();
     };
+    
 
     const loadVolume = async (loadSpec, loader) => {
         const volume = await loader.createVolume(loadSpec, onChannelDataArrived);
@@ -460,6 +539,94 @@ const VolumeViewer = () => {
         console.log([lightColor, lightIntensity, lightTheta, lightPhi]);
     }, [lightColor, lightIntensity, lightTheta, lightPhi]);
 
+
+    // Effect for handling isosurface enable/disable
+    useEffect(() => {
+        if (!currentVolume || !view3D) return;
+        
+        channels.forEach((channel, index) => {
+            view3D.setVolumeChannelOptions(
+                currentVolume,
+                index,
+                {
+                    isosurfaceEnabled: channel.isosurfaceEnabled,
+                    isovalue: channel.isovalue,
+                    opacity: channel.opacity
+                }
+            );
+        });
+
+        view3D.updateMaterial(currentVolume);
+        view3D.redraw();
+    }, [channels.map(ch => ch.isosurfaceEnabled).join(',')]); // Dependency on isosurfaceEnabled values
+
+    // Effect for handling isovalue changes
+    useEffect(() => {
+        if (!currentVolume || !view3D) return;
+        
+        channels.forEach((channel, index) => {
+            if (channel.isosurfaceEnabled) {
+                view3D.setVolumeChannelOptions(
+                    currentVolume,
+                    index,
+                    {
+                        isosurfaceEnabled: true,
+                        isovalue: channel.isovalue,
+                        opacity: channel.opacity
+                    }
+                );
+            }
+        });
+
+        view3D.updateMaterial(currentVolume);
+        view3D.redraw();
+    }, [channels.map(ch => ch.isovalue).join(',')]); // Dependency on isovalue changes
+
+    // Effect for handling opacity changes
+    useEffect(() => {
+        if (!currentVolume || !view3D) return;
+        
+        channels.forEach((channel, index) => {
+            if (channel.isosurfaceEnabled) {
+                view3D.setVolumeChannelOptions(
+                    currentVolume,
+                    index,
+                    {
+                        isosurfaceEnabled: true,
+                        isovalue: channel.isovalue,
+                        isosurfaceOpacity: channel.opacity
+                    }
+                );
+            }
+        });
+
+        view3D.updateMaterial(currentVolume);
+        view3D.redraw();
+    }, [channels.map(ch => ch.opacity).join(',')]); // Dependency on opacity changes
+
+
+
+    useEffect(() => {
+        if (!currentVolume || !view3D) return;
+        channels.forEach((channel, index) => {
+            if (channel.isosurfaceEnabled) {
+                view3D.setVolumeChannelOptions(
+                    currentVolume,
+                    index,
+                    {
+                        isosurfaceEnabled: true,
+                        isovalue: channel.isovalue,
+                        isosurfaceOpacity: channel.opacity,
+                        opacity: channel.opacity  // Include both for compatibility
+                    }
+                );
+                // Force material update
+                view3D.updateMaterial(currentVolume);
+            }
+        });
+        view3D.redraw();
+    }, [channels.map(ch => `${ch.isosurfaceEnabled}-${ch.opacity}`).join(',')]);
+
     const setInitialRenderMode = () => {
         view3D.setVolumeRenderMode(isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH);
         view3D.setMaxProjectMode(currentVolume, false);
@@ -550,40 +717,11 @@ const VolumeViewer = () => {
 
 
     const updateChannelOptions = (index, options) => {
+        if (!currentVolume || !view3D) return;
+    
         const updatedChannels = [...channels];
         updatedChannels[index] = { ...updatedChannels[index], ...options };
         setChannels(updatedChannels);
-    
-        if (view3D) {
-            view3D.setVolumeChannelOptions(index, options);
-            if (options.isosurfaceEnabled !== undefined) {
-                if (options.isosurfaceEnabled) {
-                    const channel = updatedChannels[index];
-                    view3D.createIsosurface(
-                        index,
-                        channel.color,
-                        channel.isovalue,
-                        channel.isosurfaceOpacity,
-                        channel.isosurfaceOpacity < 0.95
-                    );
-                } else {
-                    view3D.clearIsosurface(index);
-                }
-            }
-            if (options.isovalue !== undefined || options.isosurfaceOpacity !== undefined) {
-                const channel = updatedChannels[index];
-                view3D.updateIsosurface(index, channel.isovalue);
-                view3D.updateChannelMaterial(
-                    index,
-                    channel.color,
-                    channel.specularColor,
-                    channel.emissiveColor,
-                    channel.glossiness
-                );
-                view3D.updateOpacity(index, channel.isosurfaceOpacity);
-            }
-            view3D.redraw();
-        }
     };
 
     const initializeChannelOptions = (volume) => {
@@ -602,10 +740,27 @@ const VolumeViewer = () => {
     };
 
     const updateIsovalue = (index, isovalue) => {
-        if (currentVolume) {
-            view3D.updateIsosurface(currentVolume, index, isovalue);
-            view3D.redraw();
-        }
+        if (!currentVolume || !view3D) return;
+        
+        const updatedChannels = [...channels];
+        updatedChannels[index] = {
+            ...updatedChannels[index],
+            isovalue
+        };
+        setChannels(updatedChannels);
+    
+        view3D.setVolumeChannelOptions(
+            currentVolume,
+            index,
+            {
+                isosurfaceEnabled: updatedChannels[index].isosurfaceEnabled,
+                isovalue: isovalue,
+                isosurfaceOpacity: updatedChannels[index].opacity
+            }
+        );
+        
+        view3D.updateMaterial(currentVolume);
+        view3D.redraw();
     };
 
     // Histogram-based LUT adjustments
@@ -885,6 +1040,28 @@ const VolumeViewer = () => {
         }));
     };
 
+    const handleClipRegionUpdate = (newClipRegion) => {
+        setClipRegion(newClipRegion);
+        
+        if (currentVolume) {
+            view3D.updateClipRegion(
+                currentVolume,
+                newClipRegion.xmin,
+                newClipRegion.xmax,
+                newClipRegion.ymin,
+                newClipRegion.ymax,
+                newClipRegion.zmin,
+                newClipRegion.zmax
+            );
+        }
+    };
+
+    // Optional: Add handler for slice changes if you need to do something when slices change
+    const handleSliceChange = (newSlice) => {
+        // Handle slice changes if needed
+        console.log('Slice changed:', newSlice);
+    };
+
     return (
         <Layout style={{ height: '100vh', display: 'flex' }}>
             <div style={{ width: '300px', overflowY: 'auto', height: '100vh', position: 'relative', zIndex: 1 }}>
@@ -1107,6 +1284,19 @@ const VolumeViewer = () => {
                             <Option value="3D">3D</Option>
                         </Select>
                     </Panel>
+
+                    {/* Planar Slice Player Panel */}
+                    {cameraMode !== '3D' && (
+                            <Panel header="Slice Navigation" key="slice-player">
+                                <PlanarSlicePlayer
+                                    currentVolume={currentVolume}
+                                    cameraMode={cameraMode}
+                                    updateClipRegion={handleClipRegionUpdate}
+                                    clipRegion={clipRegion}
+                                    onSliceChange={handleSliceChange}
+                                />
+                            </Panel>
+                        )}
     
                     {/* Controls */}
                     <Panel header="Controls" key="6">
@@ -1189,60 +1379,83 @@ const VolumeViewer = () => {
                             </Col>
                         </Row>
                         {channels.map((channel, index) => (
-                            <div key={index}>
+                            <div key={index} className="p-4 border rounded space-y-4">
+                                {/* Add Channel Name Header */}
+                                <div style={{ 
+                                    backgroundColor: '#f5f5f5', 
+                                    padding: '8px', 
+                                    marginBottom: '12px',
+                                    borderRadius: '4px',
+                                    fontWeight: 'bold'
+                                }}>
+                                    {channel.name || `Channel ${index + 1}`}
+                                </div>
+
                                 <Row>
                                     <Col span={12}>Enable</Col>
                                     <Col span={12}>
-                                        <Switch checked={channel.enabled} onChange={(checked) => updateChannel(index, 'enabled', checked)} />
+                                        <Switch 
+                                            checked={channel.enabled}
+                                            onChange={enabled => updateChannelOptions(index, { enabled })}
+                                        />
                                     </Col>
                                 </Row>
+
+                                {/* Rest of the controls... */}
+                                <Row>
+                                    <Col span={12}>Isosurface</Col>
+                                    <Col span={12}>
+                                        <Switch
+                                            checked={channel.isosurfaceEnabled}
+                                            onChange={enabled => updateChannelOptions(index, { 
+                                                isosurfaceEnabled: enabled 
+                                            })}
+                                        />
+                                    </Col>
+                                </Row>
+
                                 {channel.isosurfaceEnabled && (
-                                        <>
-                                            <Row>
-                                                <Col span={12}>Isovalue</Col>
-                                                <Col span={12}>
-                                                    <Slider
-                                                        min={0}
-                                                        max={255}
-                                                        value={channel.isovalue}
-                                                        onChange={(value) => updateChannelOptions(index, { isovalue: value })}
-                                                    />
-                                                </Col>
-                                            </Row>
-                                            <Row>
-                                                <Col span={12}>Isosurface Opacity</Col>
-                                                <Col span={12}>
-                                                    <Slider
-                                                        min={0}
-                                                        max={1}
-                                                        step={0.01}
-                                                        value={channel.isosurfaceOpacity}
-                                                        onChange={(value) => updateChannelOptions(index, { isosurfaceOpacity: value })}
-                                                    />
-                                                </Col>
-                                            </Row>
-                                        </>
-                                    )}
+                                    <>
+                                        <Row>
+                                            <Col span={12}>Isovalue</Col>
+                                            <Col span={12}>
+                                                <Slider
+                                                    min={0}
+                                                    max={255}
+                                                    value={channel.isovalue}
+                                                    onChange={value => updateChannelOptions(index, { 
+                                                        isovalue: value 
+                                                    })}
+                                                />
+                                            </Col>
+                                        </Row>
+                                        <Row>
+                                            <Col span={12}>Opacity</Col>
+                                            <Col span={12}>
+                                                <Slider
+                                                    min={0}
+                                                    max={100}
+                                                    value={channel.opacity * 100}
+                                                    onChange={value => updateChannelOptions(index, { 
+                                                        opacity: value / 100 
+                                                    })}
+                                                />
+                                            </Col>
+                                        </Row>
+                                    </>
+                                )}
+
                                 <Row>
-                                    <Col span={12}>Diffuse Color</Col>
+                                    <Col span={12}>Color</Col>
                                     <Col span={12}>
-                                    <Input
-                                    type="color"
-                                    value={rgbToHex(channel.colorD[0], channel.colorD[1], channel.colorD[2])}
-                                    onChange={(e) => {
-                                        const rgbColor = hexToRgb(e.target.value);
-                                        updateChannel(index, 'colorD', rgbColor);
-                                    }}
-                                />
-                                    </Col>
-                                </Row>
-                                <Row>
-                                    <Col span={12}>Histogram Adjustments</Col>
-                                    <Col span={12}>
-                                        <Button onClick={() => updateChannelLut(index, 'autoIJ')}>Auto IJ</Button>
-                                        <Button onClick={() => updateChannelLut(index, 'auto0')}>Auto Min/Max</Button>
-                                        <Button onClick={() => updateChannelLut(index, 'bestFit')}>Best Fit</Button>
-                                        <Button onClick={() => updateChannelLut(index, 'pct50_98')}>50-98 Percentile</Button>
+                                        <Input
+                                            type="color"
+                                            value={rgbToHex(channel.color[0], channel.color[1], channel.color[2])}
+                                            onChange={e => {
+                                                const color = hexToRgb(e.target.value);
+                                                updateChannelOptions(index, { color });
+                                            }}
+                                        />
                                     </Col>
                                 </Row>
                             </div>
@@ -1288,6 +1501,7 @@ const VolumeViewer = () => {
                             </Col>
                         </Row>
                     </Panel>
+
     
                     {/* Playback */}
                     <Panel header="Playback" key="10">

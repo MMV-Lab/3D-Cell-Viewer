@@ -34,13 +34,17 @@ export const getDefaultImageInfo = () => ({
   },
 });
 
-export const CACHE_MAX_SIZE = 1_000_000_000;
+export const CACHE_MAX_SIZE = 2_000_000_000;
 export const CONCURRENCY_LIMIT = 8;
 export const PREFETCH_CONCURRENCY_LIMIT = 3;
 export const PREFETCH_DISTANCE = [5, 5, 5, 5];
 export const MAX_PREFETCH_CHUNKS = 25;
 export const PLAYBACK_INTERVAL = 80;
 export const DATARANGE_UINT8 = [0, 255];
+
+// Cache settings
+export const QUEUE_MAX_SIZE = 10;
+export const QUEUE_MAX_LOW_PRIORITY_SIZE = 4;
 
 export const TEST_DATA = {
   timeSeries: {
@@ -166,6 +170,11 @@ export const loaderContext = new VolumeLoaderContext(
   CONCURRENCY_LIMIT,
   PREFETCH_CONCURRENCY_LIMIT
 );
+// new VolumeLoaderContext(
+//   CACHE_MAX_SIZE,
+//   QUEUE_MAX_SIZE,
+//   QUEUE_MAX_LOW_PRIORITY_SIZE
+// );
 
 
 export const getDefaultChannelState = () => ({
