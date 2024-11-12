@@ -14,11 +14,41 @@ import {
 import * as THREE from 'three';
 import { loaderContext, PREFETCH_DISTANCE, MAX_PREFETCH_CHUNKS, myState } from "./appConfig";
 import { useConstructor } from './useConstructor';
-import { Slider, Switch, InputNumber, Row, Col, Collapse, Layout, Button, Select, Input, Tooltip, Spin } from 'antd';
+import { 
+    Layout, 
+    Tabs, 
+    Collapse, 
+    Switch, 
+    Slider,
+    InputNumber,
+    Row,
+    Col,
+    Button,
+    Select,
+    Input,
+    Spin
+  } from 'antd';
+  import { 
+    Settings, 
+    Files,
+    Info,
+    Sun,
+    Camera,
+    Eye,
+    Sliders,
+    Box,
+    Move3d,
+    Palette,
+    Scissors,
+    Maximize2,
+    Image,
+    Lightbulb,
+  } from 'lucide-react';
 import axios from 'axios';
 import { API_URL } from '../config'; // Importing API_URL from your config
 import { ALPHA_MASK_SLIDER_3D_DEFAULT, BRIGHTNESS_SLIDER_LEVEL_DEFAULT, CELL_SEGMENTATION_CHANNEL_NAME, DENSITY_SLIDER_LEVEL_DEFAULT, ISOSURFACE_OPACITY_SLIDER_MAX, LEVELS_SLIDER_DEFAULT, LUT_MAX_PERCENTILE, LUT_MIN_PERCENTILE, PRESET_COLORS_0, PRESET_COLOR_MAP, VIEWER_3D_SETTING } from './constants';
 import PlanarSlicePlayer from './PlanarSlicePlayer';
+
 
 // Utility function to concatenate arrays
 const concatenateArrays = (arrays) => {
@@ -33,8 +63,7 @@ const concatenateArrays = (arrays) => {
 }
 
 const { Sider, Content } = Layout;
-const { Panel } = Collapse;
-const { Option } = Select;
+const { TabPane } = Tabs;
 const { Vector3 } = THREE;
 
 const VolumeViewer = () => {
@@ -185,9 +214,19 @@ const VolumeViewer = () => {
             console.error("Invalid volume data");
             return;
         }
+
+        console.log("Volume created with info:", volume.imageInfo);
     
         volumeRef.current = volume;
         view3D.removeAllVolumes();
+
+        // Log the dimensions specifically
+        console.log("Dimensions:", {
+          sizeX: volume.imageInfo.sizeX,
+          sizeY: volume.imageInfo.sizeY,
+          sizeZ: volume.imageInfo.sizeZ,
+          sizeC: volume.imageInfo.sizeC
+      });
         
         // Initialize channels with persisted settings if available
         const channelNames = volume.imageInfo.channelNames || [];
@@ -299,6 +338,7 @@ const VolumeViewer = () => {
 
     const loadVolume = async (loadSpec, loader) => {
         const volume = await loader.createVolume(loadSpec, onChannelDataArrived);
+        console.log("Loaded volume metadata:", volume.imageInfo);
         onVolumeCreated(volume);
         
         console.log(volume.imageInfo, volume.imageInfo.times)
@@ -1131,487 +1171,631 @@ const VolumeViewer = () => {
     ]);
 
     return (
-        <Layout style={{ height: '100vh', display: 'flex' }}>
-            <div style={{ width: '300px', overflowY: 'auto', height: '100vh', position: 'relative', zIndex: 1 }}>
+        <Layout style={{ height: '100vh' }}>
+          <div style={{ width: '300px', overflowY: 'auto', height: '100vh', position: 'relative', zIndex: 1 }}>
             <Sider width="100%" style={{ background: '#fff', padding: '20px', paddingBottom: '60px' }}>
-                <Collapse defaultActiveKey={['1']}>
+              <Tabs defaultActiveKey="settings">
+                {/* Settings Tab */}
+                <TabPane 
+                  tab={<span><Settings size={16} /> Settings</span>} 
+                  key="settings"
+                >
+                  <Collapse defaultActiveKey={['renderMode']}>
                     {/* Render Mode */}
-                    <Panel header="Render Mode" key="1">
-                        <Row>
-                            <Col span={12}>Path Trace</Col>
-                            <Col span={12}>
-                                <Switch checked={isPT} onChange={(checked) => setIsPT(checked)} />
-                            </Col>
-                        </Row>
-                    </Panel>
+                    <Collapse.Panel header={<span><Eye size={16} /> Render Mode</span>} key="renderMode">
+                      <Row>
+                        <Col span={12}>Path Trace</Col>
+                        <Col span={12}>
+                          <Switch checked={isPT} onChange={(checked) => setIsPT(checked)} />
+                        </Col>
+                      </Row>
+                    </Collapse.Panel>
     
-                    {/* Density */}
-                    <Panel header="Density" key="2">
-                        <Slider 
-                            min={0} 
-                            max={100} 
-                            value={settings.density}
-                            onChange={(val) => updateSetting('density', val)}
-                        />
-                    </Panel>
+                    {/* Density Settings */}
+                    <Collapse.Panel header={<span><Sliders size={16} /> Density</span>} key="density">
+                      <Slider 
+                        min={0} 
+                        max={100} 
+                        value={settings.density}
+                        onChange={(val) => updateSetting('density', val)}
+                      />
+                    </Collapse.Panel>
     
                     {/* Mask Alpha */}
-                    <Panel header="Mask Alpha" key="2_1">
-                        <Slider 
-                            min={0} 
-                            max={100} 
-                            value={settings.maskAlpha}
-                            onChange={(val) => updateSetting('maskAlpha', val)}
-                        />
-                    </Panel>
+                    <Collapse.Panel header={<span><Image size={16} /> Mask Alpha</span>} key="maskAlpha">
+                      <Slider 
+                        min={0} 
+                        max={100} 
+                        value={settings.maskAlpha}
+                        onChange={(val) => updateSetting('maskAlpha', val)}
+                      />
+                    </Collapse.Panel>
     
                     {/* Ray Step Sizes */}
-                    <Panel header="Primary Ray" key="2_2">
+                    <Collapse.Panel header={<span><Maximize2 size={16} /> Ray Steps</span>} key="raySteps">
+                      <div className="setting-group">
+                        <label>Primary Ray</label>
                         <Slider min={1} max={40} step={0.1} value={primaryRay} onChange={setPrimaryRay} />
-                    </Panel>
-                    <Panel header="Secondary Ray" key="2_3">
+                      </div>
+                      <div className="setting-group">
+                        <label>Secondary Ray</label>
                         <Slider min={1} max={40} step={0.1} value={secondaryRay} onChange={setSecondaryRay} />
-                    </Panel>
+                      </div>
+                    </Collapse.Panel>
     
                     {/* Exposure */}
-                    <Panel header="Exposure" key="3">
-                        <Slider 
-                            min={0} 
-                            max={100}
-                            value={settings.brightness}
-                            onChange={(val) => updateSetting('brightness', val)}
-                        />
-                    </Panel>
+                    <Collapse.Panel header={<span><Sun size={16} /> Exposure</span>} key="exposure">
+                      <Slider 
+                        min={0} 
+                        max={100}
+                        value={settings.brightness}
+                        onChange={(val) => updateSetting('brightness', val)}
+                      />
+                    </Collapse.Panel>
     
                     {/* Camera Settings */}
-                    <Panel header="Camera Settings" key="7">
-                        <Row>
-                            <Col span={12}>FOV</Col>
-                            <Col span={12}>
-                                <InputNumber min={0} max={90} step={1} value={fov} onChange={setFov} />
-                            </Col>
-                        </Row>
-                        <Row>
-                            <Col span={12}>Focal Distance</Col>
-                            <Col span={12}>
-                                <InputNumber min={0.1} max={5.0} step={0.01} value={focalDistance} onChange={setFocalDistance} />
-                            </Col>
-                        </Row>
-                        <Row>
-                            <Col span={12}>Aperture</Col>
-                            <Col span={12}>
-                                <InputNumber min={0.0} max={0.1} step={0.001} value={aperture} onChange={setAperture} />
-                            </Col>
-                        </Row>
-                    </Panel>
+                    <Collapse.Panel header={<span><Camera size={16} /> Camera Settings</span>} key="camera">
+                      <Row>
+                        <Col span={12}>FOV</Col>
+                        <Col span={12}>
+                          <InputNumber min={0} max={90} step={1} value={fov} onChange={setFov} />
+                        </Col>
+                      </Row>
+                      <Row>
+                        <Col span={12}>Focal Distance</Col>
+                        <Col span={12}>
+                          <InputNumber min={0.1} max={5.0} step={0.01} value={focalDistance} onChange={setFocalDistance} />
+                        </Col>
+                      </Row>
+                      <Row>
+                        <Col span={12}>Aperture</Col>
+                        <Col span={12}>
+                          <InputNumber min={0.0} max={0.1} step={0.001} value={aperture} onChange={setAperture} />
+                        </Col>
+                      </Row>
+                    </Collapse.Panel>
     
                     {/* Sampling Rate */}
-                    <Panel header="Sampling Rate" key="14">
-                        <Row>
-                            <Col span={12}>Pixel Sampling Rate</Col>
-                            <Col span={12}>
-                                <InputNumber
-                                    min={0.1}
-                                    max={1.0}
-                                    step={0.01}
-                                    value={samplingRate}
-                                    onChange={updatePixelSamplingRate}
-                                />
-                            </Col>
-                        </Row>
-                    </Panel>
+                    <Collapse.Panel header={<span><Box size={16} /> Sampling Rate</span>} key="sampling">
+                      <Row>
+                        <Col span={12}>Pixel Sampling Rate</Col>
+                        <Col span={12}>
+                          <InputNumber
+                            min={0.1}
+                            max={1.0}
+                            step={0.01}
+                            value={samplingRate}
+                            onChange={updatePixelSamplingRate}
+                          />
+                        </Col>
+                      </Row>
+                    </Collapse.Panel>
     
-                    {/* Lights */}
-                    <Panel header="Lights" key="4">
-                        {lights.map((light, index) => (
-                            <div key={index}>
-                                <Row>
-                                    <Col span={12}>Intensity</Col>
-                                    <Col span={12}>
-                                        <InputNumber min={0} max={1000} value={light.mColor.x * 255}
-                                            onChange={(value) => {
-                                                const updatedLights = [...lights];
-                                                updatedLights[index].mColor.setScalar(value / 255);
-                                                setLights(updatedLights);
-                                            }}
-                                        />
-                                    </Col>
-                                </Row>
-                                <Row>
-                                    <Col span={12}>Theta</Col>
-                                    <Col span={12}>
-                                        <InputNumber min={0} max={360} value={light.mTheta * (180 / Math.PI)}
-                                            onChange={(value) => {
-                                                const updatedLights = [...lights];
-                                                updatedLights[index].mTheta = value * (Math.PI / 180);
-                                                setLights(updatedLights);
-                                            }}
-                                        />
-                                    </Col>
-                                </Row>
-                                <Row>
-                                    <Col span={12}>Phi</Col>
-                                    <Col span={12}>
-                                        <InputNumber min={0} max={360} value={light.mPhi * (180 / Math.PI)}
-                                            onChange={(value) => {
-                                                const updatedLights = [...lights];
-                                                updatedLights[index].mPhi = value * (Math.PI / 180);
-                                                setLights(updatedLights);
-                                            }}
-                                        />
-                                    </Col>
-                                </Row>
-                            </div>
-                        ))}
-                    </Panel>
-
-                    <Panel header="Lighting" key="11">
-                        <Collapse>
-                            <Panel header="Sky Light" key="1">
-                                <Row>
-                                    <Col span={8}>Top Intensity</Col>
-                                    <Col span={16}>
-                                        <Slider
-                                            min={0}
-                                            max={1}
-                                            step={0.01}
-                                            value={skyTopIntensity}
-                                            onChange={(value) => updateSkyLight('top', value, skyTopColor)}
-                                        />
-                                    </Col>
-                                </Row>
-                                <Row>
-                                    <Col span={8}>Top Color</Col>
-                                    <Col span={16}>
-                                        <Input
-                                            type="color"
-                                            value={rgbToHex(skyTopColor[0], skyTopColor[1], skyTopColor[2])}
-                                            onChange={(e) => updateSkyLight('top', skyTopIntensity, e.target.value.match(/[A-Za-z0-9]{2}/g).map(v => parseInt(v, 16)))}
-                                        />
-                                    </Col>
-                                </Row>
-                                {/* Repeat for Mid and Bottom with appropriate state variables */}
-                            </Panel>
-                            <Panel header="Area Light" key="2">
-                                <Row>
-                                    <Col span={8}>Intensity</Col>
-                                    <Col span={16}>
-                                        <Slider
-                                            min={0}
-                                            max={200}
-                                            step={1}
-                                            value={lightIntensity}
-                                            onChange={(value) => updateAreaLight(value, lightColor, lightTheta, lightPhi)}
-                                        />
-                                    </Col>
-                                </Row>
-                                <Row>
-                                    <Col span={8}>Color</Col>
-                                    <Col span={16}>
-                                        <Input
-                                            type="color"
-                                            value={rgbToHex(lightColor[0], lightColor[1], lightColor[2])}
-                                            onChange={(e) => updateAreaLight(lightIntensity, e.target.value.match(/[A-Za-z0-9]{2}/g).map(v => parseInt(v, 16)), lightTheta, lightPhi)}
-                                        />
-                                    </Col>
-                                </Row>
-                                <Row>
-                                    <Col span={8}>Theta (deg)</Col>
-                                    <Col span={16}>
-                                        <Slider
-                                            min={0}
-                                            max={360}
-                                            step={1}
-                                            value={lightTheta}
-                                            onChange={(value) => updateAreaLight(lightIntensity, lightColor, value, lightPhi)}
-                                        />
-                                    </Col>
-                                </Row>
-                                <Row>
-                                    <Col span={8}>Phi (deg)</Col>
-                                    <Col span={16}>
-                                        <Slider
-                                            min={0}
-                                            max={180}
-                                            step={1}
-                                            value={lightPhi}
-                                            onChange={(value) => updateAreaLight(lightIntensity, lightColor, lightTheta, value)}
-                                        />
-                                    </Col>
-                                </Row>
-                            </Panel>
-                        </Collapse>
-                    </Panel>
+                    {/* Lighting Settings */}
+                    <Collapse.Panel header={<span><Lightbulb size={16} /> Lighting</span>} key="lighting">
+                      <Collapse>
+                        <Collapse.Panel header="Sky Light" key="skyLight">
+                          <Row>
+                            <Col span={8}>Top Intensity</Col>
+                            <Col span={16}>
+                              <Slider
+                                min={0}
+                                max={1}
+                                step={0.01}
+                                value={skyTopIntensity}
+                                onChange={(value) => updateSkyLight('top', value, skyTopColor)}
+                              />
+                            </Col>
+                          </Row>
+                          <Row>
+                            <Col span={8}>Top Color</Col>
+                            <Col span={16}>
+                              <Input
+                                type="color"
+                                value={rgbToHex(skyTopColor[0], skyTopColor[1], skyTopColor[2])}
+                                onChange={(e) => updateSkyLight('top', skyTopIntensity, hexToRgb(e.target.value))}
+                              />
+                            </Col>
+                          </Row>
+                          {/* Mid Light Controls */}
+                          <Row>
+                            <Col span={8}>Mid Intensity</Col>
+                            <Col span={16}>
+                              <Slider
+                                min={0}
+                                max={1}
+                                step={0.01}
+                                value={skyMidIntensity}
+                                onChange={(value) => updateSkyLight('mid', value, skyMidColor)}
+                              />
+                            </Col>
+                          </Row>
+                          <Row>
+                            <Col span={8}>Mid Color</Col>
+                            <Col span={16}>
+                              <Input
+                                type="color"
+                                value={rgbToHex(skyMidColor[0], skyMidColor[1], skyMidColor[2])}
+                                onChange={(e) => updateSkyLight('mid', skyMidIntensity, hexToRgb(e.target.value))}
+                              />
+                            </Col>
+                          </Row>
+                          {/* Bottom Light Controls */}
+                          <Row>
+                            <Col span={8}>Bottom Intensity</Col>
+                            <Col span={16}>
+                              <Slider
+                                min={0}
+                                max={1}
+                                step={0.01}
+                                value={skyBotIntensity}
+                                onChange={(value) => updateSkyLight('bot', value, skyBotColor)}
+                              />
+                            </Col>
+                          </Row>
+                          <Row>
+                            <Col span={8}>Bottom Color</Col>
+                            <Col span={16}>
+                              <Input
+                                type="color"
+                                value={rgbToHex(skyBotColor[0], skyBotColor[1], skyBotColor[2])}
+                                onChange={(e) => updateSkyLight('bot', skyBotIntensity, hexToRgb(e.target.value))}
+                              />
+                            </Col>
+                          </Row>
+                        </Collapse.Panel>
+                        <Collapse.Panel header="Area Light" key="areaLight">
+                          <Row>
+                            <Col span={8}>Intensity</Col>
+                            <Col span={16}>
+                              <Slider
+                                min={0}
+                                max={200}
+                                step={1}
+                                value={lightIntensity}
+                                onChange={(value) => updateAreaLight(value, lightColor, lightTheta, lightPhi)}
+                              />
+                            </Col>
+                          </Row>
+                          <Row>
+                            <Col span={8}>Color</Col>
+                            <Col span={16}>
+                              <Input
+                                type="color"
+                                value={rgbToHex(lightColor[0], lightColor[1], lightColor[2])}
+                                onChange={(e) => updateAreaLight(lightIntensity, hexToRgb(e.target.value), lightTheta, lightPhi)}
+                              />
+                            </Col>
+                          </Row>
+                          <Row>
+                            <Col span={8}>Theta (deg)</Col>
+                            <Col span={16}>
+                              <Slider
+                                min={0}
+                                max={360}
+                                step={1}
+                                value={lightTheta}
+                                onChange={(value) => updateAreaLight(lightIntensity, lightColor, value, lightPhi)}
+                              />
+                            </Col>
+                          </Row>
+                          <Row>
+                            <Col span={8}>Phi (deg)</Col>
+                            <Col span={16}>
+                              <Slider
+                                min={0}
+                                max={180}
+                                step={1}
+                                value={lightPhi}
+                                onChange={(value) => updateAreaLight(lightIntensity, lightColor, lightTheta, value)}
+                              />
+                            </Col>
+                          </Row>
+                        </Collapse.Panel>
+                      </Collapse>
+                    </Collapse.Panel>
     
                     {/* Camera Mode */}
-                    <Panel header="Camera Mode" key="5">
-                        <Select defaultValue={cameraMode} style={{ width: '100%' }} onChange={setCameraModeHandler}>
-                            <Option value="X">X</Option>
-                            <Option value="Y">Y</Option>
-                            <Option value="Z">Z</Option>
-                            <Option value="3D">3D</Option>
-                        </Select>
-                    </Panel>
-
-                    {/* Planar Slice Player Panel */}
-                    {cameraMode !== '3D' && (
-                            <Panel header="Playback" key="slice-player">
-                                <PlanarSlicePlayer
-                                    currentVolume={currentVolume}
-                                    cameraMode={cameraMode}
-                                    updateClipRegion={handleClipRegionUpdate}
-                                    clipRegion={clipRegion}
-                                    onSliceChange={handleSliceChange}
-                                />
-                            </Panel>
-                        )}
+                    <Collapse.Panel header={<span><Move3d size={16} /> Camera Mode</span>} key="cameraMode">
+                      <Select defaultValue={cameraMode} style={{ width: '100%' }} onChange={setCameraModeHandler}>
+                        <Select.Option value="X">X</Select.Option>
+                        <Select.Option value="Y">Y</Select.Option>
+                        <Select.Option value="Z">Z</Select.Option>
+                        <Select.Option value="3D">3D</Select.Option>
+                      </Select>
+                    </Collapse.Panel>
     
                     {/* Controls */}
-                    <Panel header="Controls" key="6">
-                        <Button onClick={toggleTurntable}>{isTurntable ? "Stop Turntable" : "Start Turntable"}</Button>
-                        <Button onClick={toggleAxis}>{showAxis ? "Hide Axis" : "Show Axis"}</Button>
-                        <Button onClick={toggleBoundingBox}>{showBoundingBox ? "Hide Bounding Box" : "Show Bounding Box"}</Button>
-                        <Button onClick={toggleScaleBar}>{showScaleBar ? "Hide Scale Bar" : "Show Scale Bar"}</Button>
-                        <Row>
-                            <Col span={12}>Background Color</Col>
-                            <Col span={12}>
-                                <Input type="color" value={`#${backgroundColor.map(c => c.toString(16).padStart(2, '0')).join('')}`}
-                                    onChange={(e) => updateBackgroundColor(e.target.value.match(/.{1,2}/g).map(c => parseInt(c, 16)))} />
-                            </Col>
-                        </Row>
-                        <Row>
-                            <Col span={12}>Bounding Box Color</Col>
-                            <Col span={12}>
-                                <Input type="color" value={`#${boundingBoxColor.map(c => c.toString(16).padStart(2, '0')).join('')}`}
-                                    onChange={(e) => updateBoundingBoxColor(e.target.value.match(/.{1,2}/g).map(c => parseInt(c, 16)))} />
-                            </Col>
-                        </Row>
-                        <Button onClick={() => flipVolume('X')}>Flip X</Button>
-                        <Button onClick={() => flipVolume('Y')}>Flip Y</Button>
-                        <Button onClick={() => flipVolume('Z')}>Flip Z</Button>
-                    </Panel>
+                    <Collapse.Panel header={<span><Box size={16} /> View Controls</span>} key="controls">
+                      <Button onClick={toggleTurntable}>
+                        {isTurntable ? "Stop Turntable" : "Start Turntable"}
+                      </Button>
+                      <Button onClick={toggleAxis}>
+                        {showAxis ? "Hide Axis" : "Show Axis"}
+                      </Button>
+                      <Button onClick={toggleBoundingBox}>
+                        {showBoundingBox ? "Hide Bounding Box" : "Show Bounding Box"}
+                      </Button>
+                      <Button onClick={toggleScaleBar}>
+                        {showScaleBar ? "Hide Scale Bar" : "Show Scale Bar"}
+                      </Button>
+                      <Row>
+                        <Col span={12}>Background Color</Col>
+                        <Col span={12}>
+                          <Input 
+                            type="color" 
+                            value={rgbToHex(...backgroundColor)}
+                            onChange={(e) => updateBackgroundColor(hexToRgb(e.target.value))} 
+                          />
+                        </Col>
+                      </Row>
+                      <Row>
+                        <Col span={12}>Bounding Box Color</Col>
+                        <Col span={12}>
+                          <Input 
+                            type="color" 
+                            value={rgbToHex(...boundingBoxColor)}
+                            onChange={(e) => updateBoundingBoxColor(hexToRgb(e.target.value))} 
+                          />
+                        </Col>
+                      </Row>
+                      <Button onClick={() => flipVolume('X')}>Flip X</Button>
+                      <Button onClick={() => flipVolume('Y')}>Flip Y</Button>
+                      <Button onClick={() => flipVolume('Z')}>Flip Z</Button>
+                    </Collapse.Panel>
     
                     {/* Gamma */}
-                    <Panel header="Gamma" key="7">
-                        <Row>
-                            <Col span={8}>Min</Col>
-                            <Col span={16}>
-                                <InputNumber 
-                                    min={0} 
-                                    max={255} 
-                                    value={settings.levels[0]}
-                                    onChange={(value) => updateSetting('levels', [value, settings.levels[1], settings.levels[2]])} 
-                                />
-                            </Col>
-                        </Row>
-                        <Row>
-                            <Col span={8}>Mid</Col>
-                            <Col span={16}>
-                                <InputNumber 
-                                    min={0} 
-                                    max={255} 
-                                    value={settings.levels[1]}
-                                    onChange={(value) => updateSetting('levels', [settings.levels[0], value, settings.levels[2]])} 
-                                />
-                            </Col>
-                        </Row>
-                        <Row>
-                            <Col span={8}>Max</Col>
-                            <Col span={16}>
-                                <InputNumber 
-                                    min={0} 
-                                    max={255} 
-                                    value={settings.levels[2]}
-                                    onChange={(value) => updateSetting('levels', [settings.levels[0], settings.levels[1], value])} 
-                                />
-                            </Col>
-                        </Row>
-                    </Panel>
+                    <Collapse.Panel header="Gamma" key="gamma">
+                      <Row>
+                        <Col span={8}>Min</Col>
+                        <Col span={16}>
+                          <InputNumber 
+                            min={0} 
+                            max={255} 
+                            value={settings.levels[0]}
+                            onChange={(value) => updateSetting('levels', [value, settings.levels[1], settings.levels[2]])} 
+                          />
+                        </Col>
+                      </Row>
+                      <Row>
+                        <Col span={8}>Mid</Col>
+                        <Col span={16}>
+                          <InputNumber 
+                            min={0} 
+                            max={255} 
+                            value={settings.levels[1]}
+                            onChange={(value) => updateSetting('levels', [settings.levels[0], value, settings.levels[2]])} 
+                          />
+                        </Col>
+                      </Row>
+                      <Row>
+                        <Col span={8}>Max</Col>
+                        <Col span={16}>
+                          <InputNumber 
+                            min={0} 
+                            max={255} 
+                            value={settings.levels[2]}
+                            onChange={(value) => updateSetting('levels', [settings.levels[0], settings.levels[1], value])} 
+                          />
+                        </Col>
+                      </Row>
+                    </Collapse.Panel>
     
                     {/* Channels */}
-                    <Panel header="Channels" key="8">
-                        <Row style={{ marginBottom: '16px' }}>
-                            <Col span={12}>Color Preset</Col>
+                    <Collapse.Panel header={<span><Palette size={16} /> Channels</span>} key="channels">
+                      <Row style={{ marginBottom: '16px' }}>
+                        <Col span={12}>Color Preset</Col>
+                        <Col span={12}>
+                          <Select 
+                            value={currentPreset}
+                            style={{ width: '100%' }}
+                            onChange={applyColorPreset}
+                          >
+                            {PRESET_COLOR_MAP.map(preset => (
+                              <Select.Option key={preset.key} value={preset.key}>
+                                {preset.name}
+                              </Select.Option>
+                            ))}
+                          </Select>
+                        </Col>
+                      </Row>
+                      {channels.map((channel, index) => (
+                        <div key={index} className="channel-control">
+                          <div className="channel-header">
+                            {channel.name || `Channel ${index + 1}`}
+                          </div>
+                          <Row>
+                            <Col span={12}>Enable</Col>
                             <Col span={12}>
-                                <Select 
-                                    value={currentPreset}
-                                    style={{ width: '100%' }}
-                                    onChange={applyColorPreset}
-                                >
-                                    {PRESET_COLOR_MAP.map(preset => (
-                                        <Option key={preset.key} value={preset.key}>
-                                            {preset.name}
-                                        </Option>
-                                    ))}
-                                </Select>
+                              <Switch 
+                                checked={channel.enabled}
+                                onChange={enabled => updateChannelOptions(index, { enabled })}
+                              />
+                            </Col></Row>
+                      <Row>
+                        <Col span={12}>Isosurface</Col>
+                        <Col span={12}>
+                          <Switch
+                            checked={channel.isosurfaceEnabled}
+                            onChange={enabled => updateChannelOptions(index, { 
+                              isosurfaceEnabled: enabled 
+                            })}
+                          />
+                        </Col>
+                      </Row>
+                      {channel.isosurfaceEnabled && (
+                        <>
+                          <Row>
+                            <Col span={12}>Isovalue</Col>
+                            <Col span={12}>
+                              <Slider
+                                min={0}
+                                max={255}
+                                value={channel.isovalue}
+                                onChange={value => updateChannelOptions(index, { 
+                                  isovalue: value 
+                                })}
+                              />
                             </Col>
-                        </Row>
-                        {channels.map((channel, index) => (
-                            <div key={index} className="p-4 border rounded space-y-4">
-                                {/* Add Channel Name Header */}
-                                <div style={{ 
-                                    backgroundColor: '#f5f5f5', 
-                                    padding: '8px', 
-                                    marginBottom: '12px',
-                                    borderRadius: '4px',
-                                    fontWeight: 'bold'
-                                }}>
-                                    {channel.name || `Channel ${index + 1}`}
-                                </div>
+                          </Row>
+                          <Row>
+                            <Col span={12}>Opacity</Col>
+                            <Col span={12}>
+                              <Slider
+                                min={0}
+                                max={100}
+                                value={channel.opacity * 100}
+                                onChange={value => updateChannelOptions(index, { 
+                                  opacity: value / 100 
+                                })}
+                              />
+                            </Col>
+                          </Row>
+                        </>
+                      )}
+                      <Row>
+                        <Col span={12}>Color</Col>
+                        <Col span={12}>
+                          <Input
+                            type="color"
+                            value={rgbToHex(channel.color[0], channel.color[1], channel.color[2])}
+                            onChange={e => {
+                              const color = hexToRgb(e.target.value);
+                              updateChannelOptions(index, { color });
+                            }}
+                          />
+                        </Col>
+                      </Row>
+                    </div>
+                  ))}
+                </Collapse.Panel>
 
-                                <Row>
-                                    <Col span={12}>Enable</Col>
-                                    <Col span={12}>
-                                        <Switch 
-                                            checked={channel.enabled}
-                                            onChange={enabled => updateChannelOptions(index, { enabled })}
-                                        />
-                                    </Col>
-                                </Row>
+                {/* Clip Region */}
+                <Collapse.Panel header={<span><Scissors size={16} /> Clip Region</span>} key="clipRegion">
+                  <Row>
+                    <Col span={8}>X Min</Col>
+                    <Col span={16}>
+                      <Slider min={0} max={1} step={0.01} value={clipRegion.xmin} 
+                        onChange={(value) => updateClipRegion('xmin', value)} />
+                    </Col>
+                  </Row>
+                  <Row>
+                    <Col span={8}>X Max</Col>
+                    <Col span={16}>
+                      <Slider min={0} max={1} step={0.01} value={clipRegion.xmax} 
+                        onChange={(value) => updateClipRegion('xmax', value)} />
+                    </Col>
+                  </Row>
+                  <Row>
+                    <Col span={8}>Y Min</Col>
+                    <Col span={16}>
+                      <Slider min={0} max={1} step={0.01} value={clipRegion.ymin} 
+                        onChange={(value) => updateClipRegion('ymin', value)} />
+                    </Col>
+                  </Row>
+                  <Row>
+                    <Col span={8}>Y Max</Col>
+                    <Col span={16}>
+                      <Slider min={0} max={1} step={0.01} value={clipRegion.ymax} 
+                        onChange={(value) => updateClipRegion('ymax', value)} />
+                    </Col>
+                  </Row>
+                  <Row>
+                    <Col span={8}>Z Min</Col>
+                    <Col span={16}>
+                      <Slider min={0} max={1} step={0.01} value={clipRegion.zmin} 
+                        onChange={(value) => updateClipRegion('zmin', value)} />
+                    </Col>
+                  </Row>
+                  <Row>
+                    <Col span={8}>Z Max</Col>
+                    <Col span={16}>
+                      <Slider min={0} max={1} step={0.01} value={clipRegion.zmax} 
+                        onChange={(value) => updateClipRegion('zmax', value)} />
+                    </Col>
+                  </Row>
+                </Collapse.Panel>
 
-                                {/* Rest of the controls... */}
-                                <Row>
-                                    <Col span={12}>Isosurface</Col>
-                                    <Col span={12}>
-                                        <Switch
-                                            checked={channel.isosurfaceEnabled}
-                                            onChange={enabled => updateChannelOptions(index, { 
-                                                isosurfaceEnabled: enabled 
-                                            })}
-                                        />
-                                    </Col>
-                                </Row>
+                {/* Planar Slice Player */}
+                {cameraMode !== '3D' && (
+                  <Collapse.Panel header="Playback" key="slicePlayer">
+                    <PlanarSlicePlayer
+                      currentVolume={currentVolume}
+                      cameraMode={cameraMode}
+                      updateClipRegion={handleClipRegionUpdate}
+                      clipRegion={clipRegion}
+                      onSliceChange={handleSliceChange}
+                    />
+                  </Collapse.Panel>
+                )}
+              </Collapse>
+            </TabPane>
 
-                                {channel.isosurfaceEnabled && (
-                                    <>
-                                        <Row>
-                                            <Col span={12}>Isovalue</Col>
-                                            <Col span={12}>
-                                                <Slider
-                                                    min={0}
-                                                    max={255}
-                                                    value={channel.isovalue}
-                                                    onChange={value => updateChannelOptions(index, { 
-                                                        isovalue: value 
-                                                    })}
-                                                />
-                                            </Col>
-                                        </Row>
-                                        <Row>
-                                            <Col span={12}>Opacity</Col>
-                                            <Col span={12}>
-                                                <Slider
-                                                    min={0}
-                                                    max={100}
-                                                    value={channel.opacity * 100}
-                                                    onChange={value => updateChannelOptions(index, { 
-                                                        opacity: value / 100 
-                                                    })}
-                                                />
-                                            </Col>
-                                        </Row>
-                                    </>
-                                )}
+            {/* Files Tab */}
+            <TabPane tab={<span><Files size={16} /> Files</span>} key="files">
+              <Collapse accordion>
+                {Object.keys(fileData).map((bodyPart) => (
+                  <Collapse.Panel 
+                    header={<span className="body-part-header">{bodyPart}</span>} 
+                    key={bodyPart}
+                  >
+                    {fileData[bodyPart].map((file) => (
+                      <div 
+                        key={file} 
+                        className="file-listing"
+                        onClick={() => handleFileSelect(bodyPart, file)}
+                      >
+                        <span className="file-icon">📄</span>
+                        <span className="file-name">{file}</span>
+                        <span className="file-name-tooltip">{file}</span>
+                      </div>
+                    ))}
+                  </Collapse.Panel>
+                ))}
+              </Collapse>
+            </TabPane>
 
-                                <Row>
-                                    <Col span={12}>Color</Col>
-                                    <Col span={12}>
-                                        <Input
-                                            type="color"
-                                            value={rgbToHex(channel.color[0], channel.color[1], channel.color[2])}
-                                            onChange={e => {
-                                                const color = hexToRgb(e.target.value);
-                                                updateChannelOptions(index, { color });
-                                            }}
-                                        />
-                                    </Col>
-                                </Row>
-                            </div>
-                        ))}
-                    </Panel>
-    
-                    {/* Clip Region */}
-                    <Panel header="Clip Region" key="9">
-                        <Row>
-                            <Col span={8}>X Min</Col>
-                            <Col span={16}>
-                                <Slider min={0} max={1} step={0.01} value={clipRegion.xmin} onChange={(value) => updateClipRegion('xmin', value)} />
-                            </Col>
-                        </Row>
-                        <Row>
-                            <Col span={8}>X Max</Col>
-                            <Col span={16}>
-                                <Slider min={0} max={1} step={0.01} value={clipRegion.xmax} onChange={(value) => updateClipRegion('xmax', value)} />
-                            </Col>
-                        </Row>
-                        <Row>
-                            <Col span={8}>Y Min</Col>
-                            <Col span={16}>
-                                <Slider min={0} max={1} step={0.01} value={clipRegion.ymin} onChange={(value) => updateClipRegion('ymin', value)} />
-                            </Col>
-                        </Row>
-                        <Row>
-                            <Col span={8}>Y Max</Col>
-                            <Col span={16}>
-                                <Slider min={0} max={1} step={0.01} value={clipRegion.ymax} onChange={(value) => updateClipRegion('ymax', value)} />
-                            </Col>
-                        </Row>
-                        <Row>
-                            <Col span={8}>Z Min</Col>
-                            <Col span={16}>
-                                <Slider min={0} max={1} step={0.01} value={clipRegion.zmin} onChange={(value) => updateClipRegion('zmin', value)} />
-                            </Col>
-                        </Row>
-                        <Row>
-                            <Col span={8}>Z Max</Col>
-                            <Col span={16}>
-                                <Slider min={0} max={1} step={0.01} value={clipRegion.zmax} onChange={(value) => updateClipRegion('zmax', value)} />
-                            </Col>
-                        </Row>
-                    </Panel>
-
-    
-                </Collapse>
-    
-                <div>
-                    <Collapse accordion>
-                        {Object.keys(fileData).map((bodyPart) => (
-                            <Panel 
-                                header={<span className="body-part-header">{bodyPart}</span>} 
-                                key={bodyPart}
-                            >
-                                {fileData[bodyPart].map((file) => (
-                                    <div 
-                                        key={file} 
-                                        className="file-listing"
-                                        onClick={() => handleFileSelect(bodyPart, file)}
-                                    >
-                                        <span className="file-icon">
-                                            📄
-                                        </span>
-                                        <span className="file-name">
-                                            {file}
-                                        </span>
-                                        {/* Tooltip for long file names */}
-                                        <span className="file-name-tooltip">
-                                            {file}
-                                        </span>
-                                    </div>
-                                ))}
-                            </Panel>
-                        ))}
-                    </Collapse>
+            {/* Metadata Tab */}
+            <TabPane tab={<span><Info size={16} /> Metadata</span>} key="metadata">
+              {currentVolume && (
+                <div className="metadata-content">
+                  <h4>Volume Information</h4>
+                  <div className="metadata-item">
+                    <label>Name:</label>
+                    <span>
+                      {currentVolume.loader?.url?.split('/').pop() || currentVolume.name}
+                    </span>
+                  </div>
+                  {currentVolume.imageInfo && (
+                    <>
+                      <div className="metadata-item">
+                        <label>Dimensions:</label>
+                        <span>
+                          {currentVolume.imageInfo.volumeSize ? 
+                            `${Math.round(currentVolume.imageInfo.volumeSize.x)} × ${Math.round(currentVolume.imageInfo.volumeSize.y)} × ${Math.round(currentVolume.imageInfo.volumeSize.z)}` :
+                            'N/A'}
+                        </span>
+                      </div>
+                      <div className="metadata-item">
+                        <label>Physical Size:</label>
+                        <span>
+                          {currentVolume.physicalSize ? 
+                            `${Math.round(currentVolume.physicalSize.x)} × ${Math.round(currentVolume.physicalSize.y)} × ${Math.round(currentVolume.physicalSize.z)} ${currentVolume.physicalUnitSymbol || 'units'}` :
+                            'N/A'}
+                        </span>
+                      </div>
+                      <div className="metadata-item">
+                        <label>Channels:</label>
+                        <span>{currentVolume.imageMetadata?.Channels || 'N/A'}</span>
+                      </div>
+                      {currentVolume.imageMetadata && (
+                        <>
+                          <div className="metadata-item">
+                            <label>Original Dimensions:</label>
+                            <span>
+                              {currentVolume.imageMetadata.Dimensions ? 
+                                `${currentVolume.imageMetadata.Dimensions.x} × ${currentVolume.imageMetadata.Dimensions.y} × ${currentVolume.imageMetadata.Dimensions.z}` :
+                                'N/A'}
+                            </span>
+                          </div>
+                          <div className="metadata-item">
+                            <label>Physical Size per Pixel:</label>
+                            <span>
+                              {currentVolume.imageMetadata['Physical size per pixel'] ? 
+                                `${currentVolume.imageMetadata['Physical size per pixel'].x} × ${currentVolume.imageMetadata['Physical size per pixel'].y} × ${currentVolume.imageMetadata['Physical size per pixel'].z}` :
+                                'N/A'}
+                            </span>
+                          </div>
+                          <div className="metadata-item">
+                            <label>Time Series Frames:</label>
+                            <span>
+                              {currentVolume.imageMetadata['Time series frames'] || 'N/A'}
+                            </span>
+                          </div>
+                        </>
+                      )}
+                    </>
+                  )}
                 </div>
-            </Sider>
-            </div>
-    
-            <Content style={{ overflowY: 'auto', height: '100vh', flex: 1, padding: 0, position: 'relative' }}>
-                <Spin spinning={isLoading} tip="Loading volume data..." size="large">
-                    <div id="volume-viewer" ref={viewerRef} style={{ width: '100%', height: '100vh', position: 'relative' }}></div>
-                </Spin>
-            </Content>
-        </Layout>
-    );
+              )}
+            </TabPane>
+          </Tabs>
+        </Sider>
+      </div>
+
+      <Content style={{ overflowY: 'auto', height: '100vh', flex: 1, padding: 0, position: 'relative' }}>
+        <Spin spinning={isLoading} tip="Loading volume data..." size="large">
+          <div id="volume-viewer" ref={viewerRef} style={{ width: '100%', height: '100vh', position: 'relative' }}></div>
+        </Spin>
+      </Content>
+
+      <style jsx>{`
+        .setting-group {
+          margin-bottom: 16px;
+        }
+        .setting-group label {
+          display: block;
+          margin-bottom: 8px;
+        }
+        .channel-control {
+          margin-bottom: 12px;
+          padding: 8px;
+          border-radius: 4px;
+          background: #f5f5f5;
+        }
+        .channel-header {
+          background: #e6e6e6;
+          padding: 8px;
+          margin: -8px -8px 8px -8px;
+          border-radius: 4px 4px 0 0;
+          font-weight: 500;
+        }
+        .file-listing {
+          padding: 8px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          border-bottom: 1px solid #f0f0f0;
+        }
+        .file-listing:hover {
+          background: #f5f5f5;
+        }
+        .metadata-content {
+          padding: 16px;
+        }
+        .metadata-item {
+          margin-bottom: 8px;
+        }
+        .metadata-item label {
+          font-weight: 500;
+          margin-right: 8px;
+        }
+        .file-icon {
+          margin-right: 8px;
+        }
+        .file-name {
+          flex: 1;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .file-name-tooltip {
+          display: none;
+        }
+        .file-listing:hover .file-name-tooltip {
+          display: block;
+          position: absolute;
+          background: rgba(0, 0, 0, 0.75);
+          color: white;
+          padding: 4px 8px;
+          border-radius: 4px;
+          font-size: 12px;
+          z-index: 1000;
+        }
+      `}</style>
+    </Layout>
+  );
+                    
 }
 
 export default VolumeViewer;
