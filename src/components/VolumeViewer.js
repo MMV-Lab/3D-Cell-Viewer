@@ -1170,11 +1170,41 @@ const VolumeViewer = () => {
         clipRegion, channels, saveCurrentSettings
     ]);
 
+    // Utility function to round to 1 significant figure
+    const roundToSignificantFigure = (num, sigFigs = 1) => {
+      if (num === 0) return 0;
+      const scale = Math.pow(10, Math.floor(Math.log10(Math.abs(num))) + 1 - sigFigs);
+      return Math.round(num / scale) * scale;
+    };
+
     return (
         <Layout style={{ height: '100vh' }}>
           <div style={{ width: '300px', overflowY: 'auto', height: '100vh', position: 'relative', zIndex: 1 }}>
-            <Sider width="100%" style={{ background: '#fff', padding: '20px', paddingBottom: '60px' }}>
+            <Sider width="100%" style={{ background: '#fff', padding: '20px', paddingBottom: '60px' , marginTop: '10px'}}>
               <Tabs defaultActiveKey="settings">
+                {/* Files Tab */}
+                <TabPane tab={<span><Files size={16} /> Files</span>} key="files">
+                  <Collapse accordion>
+                    {Object.keys(fileData).map((bodyPart) => (
+                      <Collapse.Panel 
+                        header={<span className="body-part-header">{bodyPart}</span>} 
+                        key={bodyPart}
+                      >
+                        {fileData[bodyPart].map((file) => (
+                          <div 
+                            key={file} 
+                            className="file-listing"
+                            onClick={() => handleFileSelect(bodyPart, file)}
+                          >
+                            <span className="file-icon">📄</span>
+                            <span className="file-name">{file}</span>
+                            <span className="file-name-tooltip">{file}</span>
+                          </div>
+                        ))}
+                      </Collapse.Panel>
+                    ))}
+                  </Collapse>
+                </TabPane>
                 {/* Settings Tab */}
                 <TabPane 
                   tab={<span><Settings size={16} /> Settings</span>} 
@@ -1566,6 +1596,59 @@ const VolumeViewer = () => {
                           />
                         </Col>
                       </Row>
+                      <Row style={{ marginTop: '8px', marginRight: '-8px', marginLeft: '-8px' }}> {/* Negative margins to counter parent padding */}
+                      <Col span={24}>
+                        <div style={{ 
+                          display: 'flex', 
+                          flexDirection: 'column', 
+                          gap: '4px',
+                          padding: '0 8px' // Add padding here instead
+                        }}>
+                          {/* First row */}
+                          <div style={{ 
+                            display: 'flex', 
+                            gap: '4px',
+                            width: '100%' // Ensure full width
+                          }}>
+                            <Button 
+                              size="small"  // Make buttons smaller
+                              style={{ flex: 1, minWidth: 0 }} // minWidth: 0 prevents button from overflowing
+                              onClick={() => updateChannelLut(index, 'autoIJ')}
+                            >
+                              Auto IJ
+                            </Button>
+                            <Button 
+                              size="small"
+                              style={{ flex: 1, minWidth: 0 }}
+                              onClick={() => updateChannelLut(index, 'auto0')}
+                            >
+                              Min/Max
+                            </Button>
+                          </div>
+                          {/* Second row */}
+                          <div style={{ 
+                            display: 'flex', 
+                            gap: '4px',
+                            width: '100%'
+                          }}>
+                            <Button 
+                              size="small"
+                              style={{ flex: 1, minWidth: 0 }}
+                              onClick={() => updateChannelLut(index, 'bestFit')}
+                            >
+                              Best Fit
+                            </Button>
+                            <Button 
+                              size="small"
+                              style={{ flex: 1, minWidth: 0 }}
+                              onClick={() => updateChannelLut(index, 'pct50_98')}
+                            >
+                              50-98%
+                            </Button>
+                          </div>
+                        </div>
+                      </Col>
+                    </Row>
                     </div>
                   ))}
                 </Collapse.Panel>
@@ -1631,94 +1714,70 @@ const VolumeViewer = () => {
               </Collapse>
             </TabPane>
 
-            {/* Files Tab */}
-            <TabPane tab={<span><Files size={16} /> Files</span>} key="files">
-              <Collapse accordion>
-                {Object.keys(fileData).map((bodyPart) => (
-                  <Collapse.Panel 
-                    header={<span className="body-part-header">{bodyPart}</span>} 
-                    key={bodyPart}
-                  >
-                    {fileData[bodyPart].map((file) => (
-                      <div 
-                        key={file} 
-                        className="file-listing"
-                        onClick={() => handleFileSelect(bodyPart, file)}
-                      >
-                        <span className="file-icon">📄</span>
-                        <span className="file-name">{file}</span>
-                        <span className="file-name-tooltip">{file}</span>
-                      </div>
-                    ))}
-                  </Collapse.Panel>
-                ))}
-              </Collapse>
-            </TabPane>
-
             {/* Metadata Tab */}
-            <TabPane tab={<span><Info size={16} /> Metadata</span>} key="metadata">
-              {currentVolume && (
-                <div className="metadata-content">
-                  <h4>Volume Information</h4>
-                  <div className="metadata-item">
-                    <label>Name:</label>
-                    <span>
-                      {currentVolume.loader?.url?.split('/').pop() || currentVolume.name}
-                    </span>
-                  </div>
-                  {currentVolume.imageInfo && (
-                    <>
-                      <div className="metadata-item">
-                        <label>Dimensions:</label>
-                        <span>
-                          {currentVolume.imageInfo.volumeSize ? 
-                            `${Math.round(currentVolume.imageInfo.volumeSize.x)} × ${Math.round(currentVolume.imageInfo.volumeSize.y)} × ${Math.round(currentVolume.imageInfo.volumeSize.z)}` :
-                            'N/A'}
-                        </span>
-                      </div>
-                      <div className="metadata-item">
-                        <label>Physical Size:</label>
-                        <span>
-                          {currentVolume.physicalSize ? 
-                            `${Math.round(currentVolume.physicalSize.x)} × ${Math.round(currentVolume.physicalSize.y)} × ${Math.round(currentVolume.physicalSize.z)} ${currentVolume.physicalUnitSymbol || 'units'}` :
-                            'N/A'}
-                        </span>
-                      </div>
-                      <div className="metadata-item">
-                        <label>Channels:</label>
-                        <span>{currentVolume.imageMetadata?.Channels || 'N/A'}</span>
-                      </div>
-                      {currentVolume.imageMetadata && (
-                        <>
-                          <div className="metadata-item">
-                            <label>Original Dimensions:</label>
-                            <span>
-                              {currentVolume.imageMetadata.Dimensions ? 
-                                `${currentVolume.imageMetadata.Dimensions.x} × ${currentVolume.imageMetadata.Dimensions.y} × ${currentVolume.imageMetadata.Dimensions.z}` :
-                                'N/A'}
-                            </span>
-                          </div>
-                          <div className="metadata-item">
-                            <label>Physical Size per Pixel:</label>
-                            <span>
-                              {currentVolume.imageMetadata['Physical size per pixel'] ? 
-                                `${currentVolume.imageMetadata['Physical size per pixel'].x} × ${currentVolume.imageMetadata['Physical size per pixel'].y} × ${currentVolume.imageMetadata['Physical size per pixel'].z}` :
-                                'N/A'}
-                            </span>
-                          </div>
-                          <div className="metadata-item">
-                            <label>Time Series Frames:</label>
-                            <span>
-                              {currentVolume.imageMetadata['Time series frames'] || 'N/A'}
-                            </span>
-                          </div>
-                        </>
-                      )}
-                    </>
-                  )}
+            <TabPane tab={<span><Info size={16} /> Info</span>} key="metadata">
+            {currentVolume && (
+              <div className="metadata-content">
+                <h4>Volume Information</h4>
+                <div className="metadata-item">
+                  <label>Name:</label>
+                  <span>
+                    {currentVolume.loader?.url?.split('/').pop() || currentVolume.name}
+                  </span>
                 </div>
-              )}
-            </TabPane>
+                {currentVolume.imageInfo && (
+                  <>
+                    <div className="metadata-item">
+                      <label>Dimensions:</label>
+                      <span>
+                        {currentVolume.imageInfo.volumeSize ? 
+                          `${roundToSignificantFigure(currentVolume.imageInfo.volumeSize.x)} × ${roundToSignificantFigure(currentVolume.imageInfo.volumeSize.y)} × ${roundToSignificantFigure(currentVolume.imageInfo.volumeSize.z)}` :
+                          'N/A'}
+                      </span>
+                    </div>
+                    <div className="metadata-item">
+                      <label>Physical Size:</label>
+                      <span>
+                        {currentVolume.physicalSize ? 
+                          `${roundToSignificantFigure(currentVolume.physicalSize.x)} × ${roundToSignificantFigure(currentVolume.physicalSize.y)} × ${roundToSignificantFigure(currentVolume.physicalSize.z)} ${currentVolume.physicalUnitSymbol || 'units'}` :
+                          'N/A'}
+                      </span>
+                    </div>
+                    <div className="metadata-item">
+                      <label>Channels:</label>
+                      <span>{currentVolume.imageMetadata?.Channels || 'N/A'}</span>
+                    </div>
+                    {currentVolume.imageMetadata && (
+                      <>
+                        <div className="metadata-item">
+                          <label>Original Dimensions:</label>
+                          <span>
+                            {currentVolume.imageMetadata.Dimensions ? 
+                              `${roundToSignificantFigure(currentVolume.imageMetadata.Dimensions.x)} × ${roundToSignificantFigure(currentVolume.imageMetadata.Dimensions.y)} × ${roundToSignificantFigure(currentVolume.imageMetadata.Dimensions.z)}` :
+                              'N/A'}
+                          </span>
+                        </div>
+                        <div className="metadata-item">
+                          <label>Physical Size per Pixel:</label>
+                          <span>
+                            {currentVolume.imageMetadata['Physical size per pixel'] ? 
+                              `${roundToSignificantFigure(currentVolume.imageMetadata['Physical size per pixel'].x)} × ${roundToSignificantFigure(currentVolume.imageMetadata['Physical size per pixel'].y)} × ${roundToSignificantFigure(currentVolume.imageMetadata['Physical size per pixel'].z)}` :
+                              'N/A'}
+                          </span>
+                        </div>
+                        <div className="metadata-item">
+                          <label>Time Series Frames:</label>
+                          <span>
+                            {currentVolume.imageMetadata['Time series frames'] || 'N/A'}
+                          </span>
+                        </div>
+                      </>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+          </TabPane>
           </Tabs>
         </Sider>
       </div>
