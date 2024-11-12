@@ -47,8 +47,8 @@ cd "$FRONTEND_DIR"
 npm install
 
 # Building the React Application
-echo "Building React app..."
-npm run build
+echo "Building and minifying the React app for production..."
+NODE_ENV=production npm run build
 
 # Check if the web server root directory exists, if not, create it
 if [ ! -d "$WEB_SERVER_ROOT" ]; then
