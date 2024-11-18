@@ -1374,3 +1374,76 @@ button svg {
 .player-header {
   user-select: none;
 }
+
+/* Base styles for planar controls container */
+.planar-controls-container {
+  position: absolute;
+  bottom: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(95%, 808px);
+  max-width: calc(100vw - 40px);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(4px);
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 16px;
+  z-index: 100;
+  transition: all 0.3s ease;
+}
+
+.planar-slice-player {
+  width: 100%;
+  max-width: 100%;
+  background: #fff;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+/* Small screens */
+@media (max-width: 576px) {
+  .planar-controls-container {
+    width: 95%;
+    bottom: 5%;
+    padding: 12px;
+  }
+
+  .planar-slice-player {
+    font-size: 0.9em;
+  }
+
+  .planar-slice-player .ant-row {
+    margin: 8px 0;
+  }
+
+  .planar-slice-player .ant-btn {
+    padding: 4px 8px;
+    font-size: 0.9em;
+  }
+}
+
+/* Medium screens */
+@media (min-width: 577px) and (max-width: 992px) {
+  .planar-controls-container {
+    width: 90%;
+    bottom: 7%;
+  }
+}
+
+/* Large screens */
+@media (min-width: 993px) {
+  .planar-controls-container {
+    width: min(85%, 808px);
+  }
+}
+
+/* Handle touch devices */
+@media (hover: none) {
+  .planar-controls-container {
+    touch-action: none;
+  }
+
+  .planar-slice-player input[type="number"] {
+    font-size: 16px; /* Prevents iOS zoom on focus */
+  }
+}
