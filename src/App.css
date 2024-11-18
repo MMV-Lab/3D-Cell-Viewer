@@ -1,11 +1,11 @@
 :root {
   --color-primary: #000000; /* Black for primary */
   --color-primary-dark: #333333; /* Dark grey as a substitute for dark primary */
-  --color-secondary: #FFFFFF; /* White for secondary */
+  --color-secondary: #ffffff; /* White for secondary */
   --color-border: #e0e0e0; /* You might keep this for borders */
   --color-background: #f5f5f5; /* Light grey for backgrounds, if suitable */
   --color-tooltip: #000000; /* Black for tooltips */
-  --color-tooltip-text: #FFFFFF; /* White for tooltip text */
+  --color-tooltip-text: #ffffff; /* White for tooltip text */
 }
 .App {
   display: flex;
@@ -24,7 +24,9 @@
 
 /* Adjust the footer CSS */
 .app-footer {
-  background-color: var(--color-primary); /* Using your primary color variable */
+  background-color: var(
+    --color-primary
+  ); /* Using your primary color variable */
   color: var(--color-secondary);
   padding: 20px; /* Adjust the padding as needed */
   text-align: center;
@@ -39,14 +41,14 @@
 }
 
 body {
-  font-family: 'Roboto', sans-serif;
+  font-family: "Roboto", sans-serif;
 }
-body, html {
+body,
+html {
   margin: auto;
   padding: 0;
   max-width: 100vw;
   overflow-x: hidden; /* Prevent horizontal scroll */
- 
 }
 
 .container {
@@ -55,7 +57,7 @@ body, html {
   align-items: flex-start;
   width: 95%; /* Adjust the percentage as needed */
   margin: 40px auto 40px 20px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .main-content {
@@ -67,7 +69,6 @@ body, html {
   min-width: 98%;
   width: 100%;
 }
-
 
 .content-container {
   flex: 1; /* Each container occupies 50% of the horizontal space */
@@ -87,93 +88,101 @@ body, html {
   top: 3px;
   flex-grow: 1;
 }
-  
-  .grid-with-indicators {
-    display: grid;
-    padding-top: 21px;
-    position: relative;
-    width: auto;
-    gap: 5px;
-  }
-  
-  .grid-with-indicators .horizontal-indicators {
-    grid-column: 2;
-    grid-row: 1;
-    margin-left: -2px;
-  }
-  
-  .grid-with-indicators .vertical-indicators {
-    grid-column: 1;
-    grid-row: 2;
-  }
-  
-  .grid-with-indicators .grid-container {
-    grid-column: 2;
-    grid-row: 2;
-  }
 
-  .grid-with-indicators:hover {
-    transform: scale(1.5); /* Adjust the scale value as needed */
-    z-index: 100; /* Ensure the zoomed element is above others */
-    transition: transform 0.3s ease; /* Smooth zoom effect */
-    /* position: absolute; Use absolute positioning */
-
-  }
-  
-  .grid-container {
-    display: grid;
-    grid-template-columns: repeat(8, 15px); /* Keeps the 15px width for each cell */
-    grid-template-rows: repeat(8, 15px); /* Ensures rows are also defined for clarity */
-    border: 1px solid #e0e0e0; /* Maintains the border */
-    background-color: #f5f5f5; /* Keeps the background color */
-    border-radius: 5px; /* Maintains the border-radius */
-    width: 120px; /* Adjusted width: 8 cells * 15px each */
-    height: 120px; /* Adjusted height: 8 cells * 15px each */
-    box-shadow: 0 1px 3px rgba(0,0,0,0.2); /* Keeps the shadow */
-  }
-  
-  .grid-cell {
-    background-color: #adacaa;
-    border: .25px inherit;
-    border-color: #9e9c9d;
-    box-sizing: border-box;
-    cursor: pointer;
-    height: 15px;
-    position: relative;
-    transition: box-shadow .3s ease,transform .3s ease;
-    width: 15px
-  }
-  
-  .tooltip {
-    visibility: hidden;
-    position: absolute;
-    background-color: var(--color-tooltip);
-    color: var(--color-tooltip-text);
-    padding: 8px 10px;
-    border-radius: 5px;
-    border: 1px solid #fff;
-    z-index: 1010 !important;    
-    font-size: 0.7em;
-    width: 130px;
-    text-align: left;
-    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
-    transition: visibility 0.2s ease, opacity 0.2s ease;
-    opacity: 0; /* Start with an invisible tooltip */
-    pointer-events: none; /* Prevents the tooltip from blocking mouse events */
+.grid-with-indicators {
+  display: grid;
+  padding-top: 21px;
+  position: relative;
+  width: auto;
+  gap: 5px;
 }
 
-  
-  .grid-cell:hover .tooltip {
-    visibility: visible;
-    opacity: 1; /* Make the tooltip visible on hover */
-    transition-delay: 0.5s; /* Add a delay to the transition */
-  }
-  
-  .grid-cell:hover {
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3); /* More pronounced shadow on hover */
-    transform: scale(1.05);
-    z-index: 1;
-  }
+.grid-with-indicators .horizontal-indicators {
+  grid-column: 2;
+  grid-row: 1;
+  margin-left: -2px;
+}
+
+.grid-with-indicators .vertical-indicators {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.grid-with-indicators .grid-container {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.grid-with-indicators:hover {
+  transform: scale(1.5); /* Adjust the scale value as needed */
+  z-index: 100; /* Ensure the zoomed element is above others */
+  transition: transform 0.3s ease; /* Smooth zoom effect */
+  /* position: absolute; Use absolute positioning */
+}
+
+.grid-container {
+  display: grid;
+  grid-template-columns: repeat(
+    8,
+    15px
+  ); /* Keeps the 15px width for each cell */
+  grid-template-rows: repeat(
+    8,
+    15px
+  ); /* Ensures rows are also defined for clarity */
+  border: 1px solid #e0e0e0; /* Maintains the border */
+  background-color: #f5f5f5; /* Keeps the background color */
+  border-radius: 5px; /* Maintains the border-radius */
+  width: 120px; /* Adjusted width: 8 cells * 15px each */
+  height: 120px; /* Adjusted height: 8 cells * 15px each */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); /* Keeps the shadow */
+}
+
+.grid-cell {
+  background-color: #adacaa;
+  border: 0.25px inherit;
+  border-color: #9e9c9d;
+  box-sizing: border-box;
+  cursor: pointer;
+  height: 15px;
+  position: relative;
+  transition:
+    box-shadow 0.3s ease,
+    transform 0.3s ease;
+  width: 15px;
+}
+
+.tooltip {
+  visibility: hidden;
+  position: absolute;
+  background-color: var(--color-tooltip);
+  color: var(--color-tooltip-text);
+  padding: 8px 10px;
+  border-radius: 5px;
+  border: 1px solid #fff;
+  z-index: 1010 !important;
+  font-size: 0.7em;
+  width: 130px;
+  text-align: left;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+  transition:
+    visibility 0.2s ease,
+    opacity 0.2s ease;
+  opacity: 0; /* Start with an invisible tooltip */
+  pointer-events: none; /* Prevents the tooltip from blocking mouse events */
+}
+
+.grid-cell:hover .tooltip {
+  visibility: visible;
+  opacity: 1; /* Make the tooltip visible on hover */
+  transition-delay: 0.5s; /* Add a delay to the transition */
+}
+
+.grid-cell:hover {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3); /* More pronounced shadow on hover */
+  transform: scale(1.05);
+  z-index: 1;
+}
 
 .grid-cell.selected {
   position: relative; /* This ensures the pseudo-element is positioned relative to this cell */
@@ -181,7 +190,7 @@ body, html {
 }
 
 .grid-cell.selected::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   right: 0;
@@ -197,244 +206,255 @@ body, html {
   z-index: 1;
 }
 
-  .tiff-player img {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    /* object-fit: cover; This ensures the image covers the available space, similar to your video setup */
-  }
-  
-  .player-controls {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px;
-    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background for visibility */
-  }
-  
-  .player-controls button {
-    cursor: pointer;
-    padding: 5px 10px;
-    background-color: var(--color-primary); /* Use primary color for button background */
-    color: var(--color-secondary); /* Use secondary color for text */
-    border: none;
-    border-radius: 5px;
-    outline: none;
-    transition: background-color 0.3s ease;
-  }
-  
-  .player-controls button:hover {
-    background-color: var(--color-primary-dark); /* Darker shade for hover state */
-  }
-  
-  .progress-bar {
-    flex-grow: 1;
-    height: 20px;
-    background-color: #e9e9e9;
-    border-radius: 10px;
-    margin-left: 10px;
-    position: relative;
-    overflow: hidden;
-    background-color: var(--color-border);
-    box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
-  }
-  
-  .progress {
-    height: 100%;
-    border-radius: 10px;
-    background-color: var(--color-primary); /* Use primary color for progress bar */
-    transition: width 0.3s ease;
-  }
-  
-  .scrubber {
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 12px;
-    height: 12px;
-    background-color: var(--color-secondary); /* Use secondary color for scrubber */
-    border: 2px solid var(--color-primary); /* Border color from primary */
-    border-radius: 50%;
-    cursor: pointer;
-    z-index: 2;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.4);
-  }
-  
-  
-  .tiff-player {
-    position: relative;
-    width: 100%;
-    padding-top: 56.25%; /* Adjust this value to match the aspect ratio of your TIFF images */
-    top: 76px;
-    flex-grow: 2; /* This ensures that the player takes up the space it needs, similar to your mp4 player setup */
-  }
-  
-  .overlay {
-    position: absolute; /* Positions .overlay in relation to .tiff-player */
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0; /* These four properties ensure .overlay matches the size of .tiff-player */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: rgba(0, 0, 0, 0.1);
-    z-index: 1; /* Ensures .overlay stacks above the img */
-    cursor: pointer;
-    pointer-events: none;
-  }
-  
-  .loading-bar {
-    width: 100%;
-    height: 4px;
-    background-color: #e0e0e0;
-    position: fixed;
-    top: 0;
-    left: 0;
-    z-index: 10;
-  }
-  
-  .loading-progress {
-    height: 100%;
-    width: 0;
-    background-color: #007bff;
-    transition: width 0.3s ease;
-  }
-  
-  .grid-cell.selected {
-    border: 2px solid #007bff;
-  }
-  
-  .round-header {
-    position: absolute;
-    top: 0;
-    left: 57%;
-    transform: translateX(-50%);
-    background-color: var(--color-secondary);  /* light orange background */
-    font-weight: bold;
-    z-index: 1;
-    padding: 2px 10px;
-    border-radius: 2px;  /* rounding the corners */
-    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);  /* optional shadow for a lifted effect */
+.tiff-player img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  /* object-fit: cover; This ensures the image covers the available space, similar to your video setup */
 }
-  
-  button {
-    margin: 10px;
-    padding: 10px 20px;
-    display: inline-block;
-    text-align: center;
-    vertical-align: middle;
-    cursor: pointer;
-    background-color: #007bff;
-    color: #fff;
-    border: none;
-    border-radius: 5px;
-    transition: background-color 0.3s;
-    outline: none;
-    font-size: 0.9em;
-    line-height: 1;
-    width: 120px;
-    height: 40px;
-    background-color: var(--color-primary);
-    color: var(--color-tooltip-text);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2); /* Adds subtle shadow for depth */
-  }
-  
-  button:hover {
-    background-color: var(--color-primary-dark);
-  }
-  
-  button:disabled {
-    background-color: #e0e0e0;
-    cursor: not-allowed;
-  }
-  
-  .grid-cell:not(.selected):hover {
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-    transform: scale(1.05);
-    z-index: 1;
-  }
-  
-  .grid-container:hover {
-    border-color: #007bff;
-  }
-  
-  .horizontal-indicators,
-  .vertical-indicators {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background-color: #f9f9f9;
-    padding: 5px;
-    font-size: 0.7em; /* Smaller font size */
-  }
-  
-  .horizontal-indicators {
-    position: relative;
-    z-index: 1;
-    width: 100%;
-    height: auto;
-    flex-direction: row;
-    padding: 5px 5px 5px 0;
-  }
-  
-  .vertical-indicators {
-    height: 100%;
-    width: 0px;
-    flex-direction: column;
-    padding: 0px;
-  }
-  
-  .indicator-item {
-    text-align: center;
-    font-size: 0.8em;
-    font-weight: bold;
-    margin: 0 5px;
-  }
-  
-  
-  .rounds-header-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-bottom: 20px;  /* Adding some spacing between the round headers and the rest of the content */
-  }
-  
-  .rounds-header-group {
-    display: flex;
-    justify-content: space-between;  /* Spread the round headers evenly */
-    width: 100%;  /* Take the full width of the parent container */
-    background-color: #FFA500;  /* Orange background */
-    padding: 5px;  /* Add some padding around the group */
-    margin: 5px 0;  /* Add some margin between the groups */
-    border-radius: 5px;  /* Add rounded corners */
-    box-shadow: 0px 2px 15px rgba(0, 0, 0, 0.1);  /* Add a subtle shadow for depth */
-  }
-  
+
+.player-controls {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background-color: rgba(
+    0,
+    0,
+    0,
+    0.5
+  ); /* Semi-transparent background for visibility */
+}
+
+.player-controls button {
+  cursor: pointer;
+  padding: 5px 10px;
+  background-color: var(
+    --color-primary
+  ); /* Use primary color for button background */
+  color: var(--color-secondary); /* Use secondary color for text */
+  border: none;
+  border-radius: 5px;
+  outline: none;
+  transition: background-color 0.3s ease;
+}
+
+.player-controls button:hover {
+  background-color: var(
+    --color-primary-dark
+  ); /* Darker shade for hover state */
+}
+
+.progress-bar {
+  flex-grow: 1;
+  height: 20px;
+  background-color: #e9e9e9;
+  border-radius: 10px;
+  margin-left: 10px;
+  position: relative;
+  overflow: hidden;
+  background-color: var(--color-border);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.progress {
+  height: 100%;
+  border-radius: 10px;
+  background-color: var(
+    --color-primary
+  ); /* Use primary color for progress bar */
+  transition: width 0.3s ease;
+}
+
+.scrubber {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
+  background-color: var(
+    --color-secondary
+  ); /* Use secondary color for scrubber */
+  border: 2px solid var(--color-primary); /* Border color from primary */
+  border-radius: 50%;
+  cursor: pointer;
+  z-index: 2;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.tiff-player {
+  position: relative;
+  width: 100%;
+  padding-top: 56.25%; /* Adjust this value to match the aspect ratio of your TIFF images */
+  top: 76px;
+  flex-grow: 2; /* This ensures that the player takes up the space it needs, similar to your mp4 player setup */
+}
+
+.overlay {
+  position: absolute; /* Positions .overlay in relation to .tiff-player */
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0; /* These four properties ensure .overlay matches the size of .tiff-player */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.1);
+  z-index: 1; /* Ensures .overlay stacks above the img */
+  cursor: pointer;
+  pointer-events: none;
+}
+
+.loading-bar {
+  width: 100%;
+  height: 4px;
+  background-color: #e0e0e0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 10;
+}
+
+.loading-progress {
+  height: 100%;
+  width: 0;
+  background-color: #007bff;
+  transition: width 0.3s ease;
+}
+
+.grid-cell.selected {
+  border: 2px solid #007bff;
+}
+
+.round-header {
+  position: absolute;
+  top: 0;
+  left: 57%;
+  transform: translateX(-50%);
+  background-color: var(--color-secondary); /* light orange background */
+  font-weight: bold;
+  z-index: 1;
+  padding: 2px 10px;
+  border-radius: 2px; /* rounding the corners */
+  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2); /* optional shadow for a lifted effect */
+}
+
+button {
+  margin: 10px;
+  padding: 10px 20px;
+  display: inline-block;
+  text-align: center;
+  vertical-align: middle;
+  cursor: pointer;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+  outline: none;
+  font-size: 0.9em;
+  line-height: 1;
+  width: 120px;
+  height: 40px;
+  background-color: var(--color-primary);
+  color: var(--color-tooltip-text);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Adds subtle shadow for depth */
+}
+
+button:hover {
+  background-color: var(--color-primary-dark);
+}
+
+button:disabled {
+  background-color: #e0e0e0;
+  cursor: not-allowed;
+}
+
+.grid-cell:not(.selected):hover {
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  transform: scale(1.05);
+  z-index: 1;
+}
+
+.grid-container:hover {
+  border-color: #007bff;
+}
+
+.horizontal-indicators,
+.vertical-indicators {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #f9f9f9;
+  padding: 5px;
+  font-size: 0.7em; /* Smaller font size */
+}
+
+.horizontal-indicators {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: auto;
+  flex-direction: row;
+  padding: 5px 5px 5px 0;
+}
+
+.vertical-indicators {
+  height: 100%;
+  width: 0px;
+  flex-direction: column;
+  padding: 0px;
+}
+
+.indicator-item {
+  text-align: center;
+  font-size: 0.8em;
+  font-weight: bold;
+  margin: 0 5px;
+}
+
+.rounds-header-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px; /* Adding some spacing between the round headers and the rest of the content */
+}
+
+.rounds-header-group {
+  display: flex;
+  justify-content: space-between; /* Spread the round headers evenly */
+  width: 100%; /* Take the full width of the parent container */
+  background-color: #ffa500; /* Orange background */
+  padding: 5px; /* Add some padding around the group */
+  margin: 5px 0; /* Add some margin between the groups */
+  border-radius: 5px; /* Add rounded corners */
+  box-shadow: 0px 2px 15px rgba(0, 0, 0, 0.1); /* Add a subtle shadow for depth */
+}
+
 .color-legend {
-    display: flex;
-    flex-direction: column; /* Align legend items vertically */
-    padding-right: 10px; /* Space between legend and histogram */
-    padding-top: 49px;
+  display: flex;
+  flex-direction: column; /* Align legend items vertically */
+  padding-right: 10px; /* Space between legend and histogram */
+  padding-top: 49px;
 }
 
 .gradient-box {
-    height: 200px; /* Match the height of your histogram */
-    width: 20px; /* Width of the color bar */
-    margin-bottom: 10px; /* Space between the gradient and labels */
+  height: 200px; /* Match the height of your histogram */
+  width: 20px; /* Width of the color bar */
+  margin-bottom: 10px; /* Space between the gradient and labels */
 }
 
 .legend-marks {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .legend-mark {
@@ -444,74 +464,73 @@ body, html {
   font-size: 0.8em;
 }
 
-  .text-center{
-    text-align: center;
-  }
+.text-center {
+  text-align: center;
+}
 
-  .side-panel {
-    background-color: #fff; /* White background */
-    margin-top: -62px;
-    border-radius: 4px; /* Rounded corners */
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1); /* Shadow for depth */
-    display: flex;
-    flex-direction: row;
-    overflow: hidden;
-    width: 90%;
-  }
-  
-  .side-panel .panel-header {
-    font-size: 1.25rem;
-    background-color: var(--color-primary); /* Black background */
-    color: var(--color-secondary); /* White text */
-    text-align: center;
-    font-weight: 500;
-    padding: 8px 0; /* Padding for the header */
-    border-bottom: 1px solid var(--color-border);
-    width: 100%;
-  }
-  
-  .side-panel .panel-content {
-    padding: 16px;
-    flex-grow: 1; /* Allows this element to fill up the remaining space */
-    margin-left: -32px;
-    overflow-y: auto; /* Allows scrolling if content is too long */
-  }
-  
-  .side-panel .panel-item {
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--color-border);
-    transition: background-color 0.2s;
-    cursor: pointer;
-  }
-  
-  .side-panel .panel-item:hover {
-    background-color: var(--color-background);
-  }
+.side-panel {
+  background-color: #fff; /* White background */
+  margin-top: -62px;
+  border-radius: 4px; /* Rounded corners */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Shadow for depth */
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+  width: 90%;
+}
 
-  .histogram {
-    margin-top: 20px; /* Space above the histogram */
-  }
+.side-panel .panel-header {
+  font-size: 1.25rem;
+  background-color: var(--color-primary); /* Black background */
+  color: var(--color-secondary); /* White text */
+  text-align: center;
+  font-weight: 500;
+  padding: 8px 0; /* Padding for the header */
+  border-bottom: 1px solid var(--color-border);
+  width: 100%;
+}
 
-  .histogram-bar {
-    display: flex;
-    align-items: center;
-    margin-bottom: 5px;
-  }
-  
-  .histogram-bar-fill {
-    height: 20px;
-    background-color: var(--color-primary); /* Black bars for the histogram */
-    margin-right: 10px;
-    transition: width 3s ease-in-out;
-  }
-  
-  .histogram-bar-label {
-    font-size: 0.8em;
-    color: var(--color-primary-dark); /* Dark grey text */
-  }
+.side-panel .panel-content {
+  padding: 16px;
+  flex-grow: 1; /* Allows this element to fill up the remaining space */
+  margin-left: -32px;
+  overflow-y: auto; /* Allows scrolling if content is too long */
+}
 
+.side-panel .panel-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-border);
+  transition: background-color 0.2s;
+  cursor: pointer;
+}
 
-  /* For screens wider than 1920px */
+.side-panel .panel-item:hover {
+  background-color: var(--color-background);
+}
+
+.histogram {
+  margin-top: 20px; /* Space above the histogram */
+}
+
+.histogram-bar {
+  display: flex;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.histogram-bar-fill {
+  height: 20px;
+  background-color: var(--color-primary); /* Black bars for the histogram */
+  margin-right: 10px;
+  transition: width 3s ease-in-out;
+}
+
+.histogram-bar-label {
+  font-size: 0.8em;
+  color: var(--color-primary-dark); /* Dark grey text */
+}
+
+/* For screens wider than 1920px */
 @media (min-width: 1920px) {
   .container {
     width: 90%; /* You can go up to 100% if you want to use all the horizontal space */
@@ -521,7 +540,6 @@ body, html {
   .main-content {
     flex: 0 0 100%; /* Adjust the flex-basis as needed */
   }
-
 }
 
 /* For screens wider than 3840px */
@@ -529,9 +547,7 @@ body, html {
   .container {
     width: 80%; /* Less percentage as the screen is very wide */
   }
-
 }
-
 
 .navbar {
   background-color: black; /* As per your color scheme */
@@ -552,7 +568,6 @@ body, html {
   height: 50px;
   margin-right: 10px; /* Adds a little space between logo and title */
 }
-
 
 .NotFound {
   display: flex;
@@ -611,8 +626,12 @@ body, html {
 }
 
 @keyframes orbitAnimation {
-  from { transform: rotate(0deg) translateX(150px); }
-  to { transform: rotate(360deg) translateX(150px); }
+  from {
+    transform: rotate(0deg) translateX(150px);
+  }
+  to {
+    transform: rotate(360deg) translateX(150px);
+  }
 }
 
 .NotFound-content {
@@ -645,7 +664,6 @@ body, html {
   background-color: #ff5733;
 }
 
-
 .histogram-tooltip {
   position: absolute;
   visibility: hidden;
@@ -658,7 +676,9 @@ body, html {
   z-index: 2;
   white-space: nowrap;
   pointer-events: none;
-  transition: visibility 0.2s ease, opacity 0.2s ease;
+  transition:
+    visibility 0.2s ease,
+    opacity 0.2s ease;
   opacity: 0;
   top: -35px; /* Adjust the position above the hovered element */
   left: 50%;
@@ -669,7 +689,6 @@ body, html {
   visibility: visible;
   opacity: 1;
 }
-
 
 .histogram-bar {
   position: relative; /* To position the tooltip */
@@ -686,7 +705,6 @@ body, html {
   margin-bottom: 10px;
 }
 
-
 .tooltip.top-left {
   bottom: 100%;
   left: 0;
@@ -699,7 +717,8 @@ body, html {
   transform: translateY(-10px); /* Adjust as needed */
 }
 
-.tiff-player-placeholder, .loading-overlay {
+.tiff-player-placeholder,
+.loading-overlay {
   position: relative; /* Needed for absolute positioning of the overlay */
   display: flex;
   flex-direction: column;
@@ -726,7 +745,9 @@ body, html {
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: var(--color-background);  /* Semi-transparent white background */
+  background-color: var(
+    --color-background
+  ); /* Semi-transparent white background */
   z-index: 10; /* Ensures it's above other elements */
 }
 
@@ -751,7 +772,6 @@ body, html {
   height: 300px; /* Set a fixed height for the chart */
 }
 
-
 .histogram-and-legend-container {
   display: flex;
   align-items: stretch; /* Align items vertically in the center */
@@ -773,18 +793,20 @@ body, html {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
-
-
 
 .jumbotron {
   background-color: #f9f9f9; /* Light grey background */
   padding: 20px;
   margin-top: 43px; /* Small top margin to create spacing */
   border-radius: 5px; /* Rounded corners */
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2); /* Shadow for depth */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Shadow for depth */
   text-align: center; /* Center the text */
   height: 150px; /* Fixed height to prevent resizing */
   overflow: hidden; /* Hide overflowing content */
@@ -798,8 +820,6 @@ body, html {
 .jumbotron p {
   color: var(--color-primary-dark); /* Dark grey for the paragraph */
 }
-
-
 
 button {
   display: inline-flex; /* Use flex to align items horizontally */
@@ -822,7 +842,7 @@ button {
   height: 46px;
   background-color: var(--color-primary);
   color: var(--color-tooltip-text);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 button:hover {
@@ -957,8 +977,12 @@ button svg {
 
 /* Animation for the loading of the polar plot */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .polar-plot-image {
@@ -980,8 +1004,14 @@ button svg {
 }
 
 @keyframes blink {
-  0%, 50% { opacity: 1; }
-  50.01%, 100% { opacity: 0; }
+  0%,
+  50% {
+    opacity: 1;
+  }
+  50.01%,
+  100% {
+    opacity: 0;
+  }
 }
 
 .typewriter-link {
@@ -1039,29 +1069,28 @@ button svg {
   }
 }
 
-
 @media (min-width: 1024px) {
   .mp4-player {
     min-width: 470px; /* Adjust for larger desktops */
   }
 
-  body, html {
-
+  body,
+  html {
     overflow-x: initial;
   }
-
 }
 
 .histogram-description p {
   font-size: 0.9em;
-  color: var(--color-primary-dark); /* Assuming this is a darker shade for text */
+  color: var(
+    --color-primary-dark
+  ); /* Assuming this is a darker shade for text */
   padding: 10px;
   background-color: var(--color-background);
   border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   margin-top: 20px;
 }
-
 
 .app-footer p {
   margin: 10px 0;
@@ -1072,7 +1101,9 @@ button svg {
 }
 
 .app-footer a {
-  color: var(--color-highlight); /* Highlight color for links, assuming you define this */
+  color: var(
+    --color-highlight
+  ); /* Highlight color for links, assuming you define this */
   text-decoration: underline;
 }
 
@@ -1093,7 +1124,7 @@ button svg {
 }
 
 .download-button:enabled {
-  background-color: #4CAF50; /* Green */
+  background-color: #4caf50; /* Green */
 }
 
 .download-button:disabled {
@@ -1166,9 +1197,8 @@ button svg {
 .polar-plot-container {
   width: 100%;
 }
-.round-well-info .well{
+.round-well-info .well {
   padding: auto;
-
 }
 
 .deleter {
@@ -1177,22 +1207,22 @@ button svg {
 
 .polar-plot-description p {
   font-size: 0.9em;
-  color: var(--color-primary-dark); /* Assuming this is a darker shade for text */
+  color: var(
+    --color-primary-dark
+  ); /* Assuming this is a darker shade for text */
   padding: 10px;
   background-color: var(--color-background);
   border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   margin-top: 20px;
 }
-
 
 /* Adjust for larger screens */
 @media (min-width: 1024px) {
   .side-panel-horizontal {
-    width: 100%
+    width: 100%;
   }
 }
-
 
 /* New Independent Scrolling Styles */
 .sider-container {
@@ -1215,7 +1245,6 @@ button svg {
 .ant-collapse-content {
   overflow: visible !important;
 }
-
 
 /* Add these new styles for the file listing container */
 .file-listing {
@@ -1320,7 +1349,7 @@ button svg {
   border-radius: 8px;
   padding: 15px;
   margin: 10px 0;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .plane-player-controls .ant-slider {
@@ -1334,4 +1363,14 @@ button svg {
 .plane-player-controls h4 {
   margin-bottom: 15px;
   text-align: center;
+}
+
+.planar-slice-player {
+  background: #fff;
+  border-radius: 8px;
+  transition: height 0.3s ease;
+}
+
+.player-header {
+  user-select: none;
 }
