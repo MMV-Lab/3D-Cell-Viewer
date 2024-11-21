@@ -1256,15 +1256,26 @@ const VolumeViewer = () => {
   ]);
 
   // Utility function to round to 1 significant figure
-  const roundToSignificantFigure = (num, sigFigs = 1) => {
-    if (num === 0) return 0;
+  const roundToSignificantFigure = (valueWithUnits, sigFigs = 1) => {
+    // Step 1: Remove units (assumes input format like "123µm")
+    const numericValue = valueWithUnits ? valueWithUnits : 0;
+
+    // Step 2: Return 0 if the numeric value is 0
+    if (numericValue === 0) return `0µm`;
+
+    // Step 3: Calculate scale for rounding
     const scale = Math.pow(
       10,
-      Math.floor(Math.log10(Math.abs(num))) + 1 - sigFigs,
+      Math.floor(Math.log10(Math.abs(numericValue))) + 1 - sigFigs,
     );
-    return Math.round(num / scale) * scale;
-  };
 
+    // Step 4: Perform rounding
+    const roundedValue = Math.round(numericValue / scale) * scale;
+
+    // Step 5: Add the units back
+    return `${roundedValue}µm`;
+  };
+  console.log(currentVolume?.imageMetadata);
   return (
     <Layout style={{ height: "100vh" }}>
       <div
@@ -1916,7 +1927,7 @@ const VolumeViewer = () => {
                               {currentVolume.imageMetadata[
                                 "Physical size per pixel"
                               ]
-                                ? `${roundToSignificantFigure(currentVolume.imageMetadata["Physical size per pixel"].x)} × ${roundToSignificantFigure(currentVolume.imageMetadata["Physical size per pixel"].y)} × ${roundToSignificantFigure(currentVolume.imageMetadata["Physical size per pixel"].z)}`
+                                ? `${roundToSignificantFigure(currentVolume.imageMetadata["Physical size per pixel"]?.x)} × ${roundToSignificantFigure(currentVolume.imageMetadata["Physical size per pixel"]?.y)} × ${roundToSignificantFigure(currentVolume.imageMetadata["Physical size per pixel"]?.z)}`
                                 : "N/A"}
                             </span>
                           </div>
