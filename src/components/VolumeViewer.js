@@ -65,7 +65,7 @@ import {
   VIEWER_3D_SETTING,
 } from "./constants";
 import PlanarSlicePlayer from "./PlanarSlicePlayer";
-
+import FilesList from "./FilesList";
 // Utility function to concatenate arrays
 const concatenateArrays = (arrays) => {
   const totalLength = arrays.reduce((acc, arr) => acc + arr.length, 0);
@@ -387,14 +387,17 @@ const VolumeViewer = () => {
     setIsLoading(true);
     try {
       const loadSpec = new LoadSpec();
-      const fileExtension = url.split(".").pop();
-      const volumeFileType =
-        fileExtension === "tiff" ||
-        fileExtension === "tif" ||
-        fileExtension === "ome.tiff" ||
-        fileExtension === "ome.tif"
+      const isZarr = url.endsWith(".zarr");
+      const volumeFileType = isZarr
+        ? VolumeFileFormat.ZARR
+        : url.match(/\.(tiff?|ome\.tiff?)$/i)
           ? VolumeFileFormat.TIFF
-          : VolumeFileFormat.ZARR;
+          : null;
+
+      if (!volumeFileType) {
+        throw new Error("Unsupported file format");
+      }
+
       const loader = await loadContext.createLoader(url, {
         fileType: volumeFileType,
         fetchOptions: {
@@ -407,6 +410,7 @@ const VolumeViewer = () => {
       await loadVolume(loadSpec, loader);
     } catch (error) {
       console.error("Error loading volume:", error);
+      // You might want to show an error message to the user here
     } finally {
       setIsLoading(false);
     }
@@ -453,10 +457,14 @@ const VolumeViewer = () => {
     }
   };
 
-  const handleFileSelect = async (bodyPart, file) => {
-    setSelectedBodyPart(bodyPart);
-    setSelectedFile(file);
-    await loadVolumeFromServer(`${API_URL}/${bodyPart}/${file}`);
+  const handleFileSelect = async (category, fileName) => {
+    setSelectedBodyPart(category);
+    setSelectedFile(fileName);
+
+    const fileUrl = `${API_URL}/${category}/${fileName}`;
+    console.log("Loading file:", fileUrl);
+
+    await loadVolumeFromServer(fileUrl);
   };
 
   useEffect(() => {
@@ -1287,28 +1295,12 @@ const VolumeViewer = () => {
               }
               key="files"
             >
-              <Collapse accordion>
-                {Object.keys(fileData).map((bodyPart) => (
-                  <Collapse.Panel
-                    header={
-                      <span className="body-part-header">{bodyPart}</span>
-                    }
-                    key={bodyPart}
-                  >
-                    {fileData[bodyPart].map((file) => (
-                      <div
-                        key={file}
-                        className="file-listing"
-                        onClick={() => handleFileSelect(bodyPart, file)}
-                      >
-                        <span className="file-icon">📄</span>
-                        <span className="file-name">{file}</span>
-                        <span className="file-name-tooltip">{file}</span>
-                      </div>
-                    ))}
-                  </Collapse.Panel>
-                ))}
-              </Collapse>
+              <FilesList
+                fileData={fileData}
+                onFileSelect={(category, file) =>
+                  handleFileSelect(category, file.name)
+                }
+              />
             </TabPane>
             {/* Settings Tab */}
             <TabPane
