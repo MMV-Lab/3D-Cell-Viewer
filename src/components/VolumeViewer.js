@@ -1915,25 +1915,25 @@ const VolumeViewer = () => {
                         </Col>
                       </Row>
                     </Collapse.Panel>
+
+                    {/* Mask Alpha */}
+                    <Collapse.Panel
+                      header={
+                        <span>
+                          <Image size={16} /> Mask Alpha
+                        </span>
+                      }
+                      key="maskAlpha"
+                    >
+                      <Slider
+                        min={0}
+                        max={100}
+                        value={settings.maskAlpha}
+                        onChange={(val) => updateSetting("maskAlpha", val)}
+                      />
+                    </Collapse.Panel>
                   </>
                 )}
-
-                {/* Mask Alpha */}
-                <Collapse.Panel
-                  header={
-                    <span>
-                      <Image size={16} /> Mask Alpha
-                    </span>
-                  }
-                  key="maskAlpha"
-                >
-                  <Slider
-                    min={0}
-                    max={100}
-                    value={settings.maskAlpha}
-                    onChange={(val) => updateSetting("maskAlpha", val)}
-                  />
-                </Collapse.Panel>
               </Collapse>
             </TabPane>
 
