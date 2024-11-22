@@ -16,6 +16,7 @@ import {
   StepForwardOutlined,
   StepBackwardOutlined,
 } from "@ant-design/icons";
+import styles from "./PlanarSlicePlayer.module.css";
 
 const { Text } = Typography;
 
@@ -31,13 +32,10 @@ const PlanarSlicePlayer = ({
   const [currentSlice, setCurrentSlice] = useState(0);
   const [totalSlices, setTotalSlices] = useState(100);
   const [isLooping, setIsLooping] = useState(true);
-
-  // Use useRef for the interval to prevent issues with closure stale values
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const playbackIntervalRef = useRef(null);
-  // Store current slice in ref to access latest value in interval
   const currentSliceRef = useRef(currentSlice);
 
-  // Update ref when slice changes
   useEffect(() => {
     currentSliceRef.current = currentSlice;
   }, [currentSlice]);
@@ -109,21 +107,16 @@ const PlanarSlicePlayer = ({
   }, []);
 
   const play = useCallback(() => {
-    // Clear any existing interval first
     stopPlayback();
-
     setIsPlaying(true);
 
-    // Create new interval with looping logic
     playbackIntervalRef.current = setInterval(() => {
       const nextSlice = currentSliceRef.current + 1;
 
       if (nextSlice >= totalSlices) {
         if (isLooping) {
-          // If looping is enabled, go back to start
           updateSlice(0);
         } else {
-          // If not looping, stop at the end
           stopPlayback();
         }
         return;
@@ -152,7 +145,6 @@ const PlanarSlicePlayer = ({
     updateSlice(prevSlice);
   }, [updateSlice]);
 
-  // Update total slices when volume changes
   useEffect(() => {
     const axisInfo = getAxisInfo();
     if (axisInfo?.size) {
@@ -161,7 +153,6 @@ const PlanarSlicePlayer = ({
     }
   }, [getAxisInfo]);
 
-  // Cleanup effect
   useEffect(() => {
     return () => {
       if (playbackIntervalRef.current) {
@@ -170,16 +161,13 @@ const PlanarSlicePlayer = ({
     };
   }, []);
 
-  // Handle camera mode changes
   useEffect(() => {
     stopPlayback();
     setCurrentSlice(0);
   }, [cameraMode, stopPlayback]);
 
-  // Handle playback speed changes
   useEffect(() => {
     if (isPlaying) {
-      // Restart playback with new speed
       play();
     }
   }, [playbackSpeed, play, isPlaying]);
@@ -188,26 +176,35 @@ const PlanarSlicePlayer = ({
   if (!axisInfo) return null;
 
   return (
-    <div className="planar-slice-player">
-      <Row gutter={[16, 16]}>
-        <Col span={24}>
-          <Text strong>{axisInfo.label} Plane Navigation</Text>
-        </Col>
-        <Col span={24}>
-          <Slider
-            min={0}
-            max={totalSlices - 1}
-            value={currentSlice}
-            onChange={updateSlice}
-            style={{ marginBottom: "16px" }}
-          />
-        </Col>
-      </Row>
-      <Row gutter={[16, 16]}>
-        <Col
-          span={24}
-          style={{ display: "flex", justifyContent: "center", gap: "8px" }}
-        >
+    <div
+      className={`${styles.playerContainer} ${isCollapsed ? styles.collapsed : styles.expanded}`}
+    >
+      <div
+        className={styles.toggleBar}
+        onClick={() => setIsCollapsed(!isCollapsed)}
+      >
+        <div className={styles.toggleText}>
+          {isCollapsed ? "▲ Expand Player" : "▼ Collapse Player"}
+        </div>
+      </div>
+
+      <div className={styles.playerContent}>
+        <Row gutter={[16, 16]}>
+          <Col span={24}>
+            <Text strong>{axisInfo.label} Plane Navigation</Text>
+          </Col>
+          <Col span={24}>
+            <Slider
+              min={0}
+              max={totalSlices - 1}
+              value={currentSlice}
+              onChange={updateSlice}
+              style={{ marginBottom: "16px" }}
+            />
+          </Col>
+        </Row>
+
+        <div className={styles.controlsRow}>
           <Button
             onClick={backward}
             icon={<StepBackwardOutlined />}
@@ -238,26 +235,20 @@ const PlanarSlicePlayer = ({
           >
             Forward
           </Button>
-        </Col>
-      </Row>
-      <Row gutter={[16, 16]} style={{ marginTop: "16px" }}>
-        <Col span={12}>
-          <Text>Loop Playback:</Text>
-        </Col>
-        <Col span={12}>
+        </div>
+
+        <div className={styles.settingsRow}>
+          <span className={styles.label}>Loop Playback:</span>
           <Switch
             checked={isLooping}
             onChange={setIsLooping}
             checkedChildren="On"
             unCheckedChildren="Off"
           />
-        </Col>
-      </Row>
-      <Row gutter={[16, 16]} style={{ marginTop: "16px" }}>
-        <Col span={12}>
-          <Text>Speed (fps):</Text>
-        </Col>
-        <Col span={12}>
+        </div>
+
+        <div className={styles.settingsRow}>
+          <span className={styles.label}>Speed (fps):</span>
           <InputNumber
             min={0.1}
             max={30}
@@ -265,21 +256,18 @@ const PlanarSlicePlayer = ({
             value={playbackSpeed}
             onChange={(value) => setPlaybackSpeed(value)}
           />
-        </Col>
-      </Row>
-      <Row gutter={[16, 16]} style={{ marginTop: "8px" }}>
-        <Col span={12}>
-          <Text>Current Slice:</Text>
-        </Col>
-        <Col span={12}>
+        </div>
+
+        <div className={styles.settingsRow}>
+          <span className={styles.label}>Current Slice:</span>
           <InputNumber
             min={0}
             max={totalSlices - 1}
             value={currentSlice}
             onChange={updateSlice}
           />
-        </Col>
-      </Row>
+        </div>
+      </div>
     </div>
   );
 };

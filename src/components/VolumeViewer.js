@@ -48,6 +48,7 @@ import {
   Maximize2,
   Image,
   Lightbulb,
+  Wand2,
 } from "lucide-react";
 import axios from "axios";
 import { API_URL } from "../config"; // Importing API_URL from your config
@@ -1255,25 +1256,29 @@ const VolumeViewer = () => {
     saveCurrentSettings,
   ]);
 
-  // Utility function to round to 1 significant figure
-  const roundToSignificantFigure = (valueWithUnits, sigFigs = 1) => {
-    // Step 1: Remove units (assumes input format like "123µm")
-    const numericValue = valueWithUnits ? valueWithUnits : 0;
+  // Update the roundToSignificantFigure function:
+  const roundToSignificantFigure = (value, sigFigs = 1) => {
+    if (value === undefined || value === null) return "N/A";
 
-    // Step 2: Return 0 if the numeric value is 0
-    if (numericValue === 0) return `0µm`;
+    // Convert value to number if it's a string
+    const numericValue = Number(value);
 
-    // Step 3: Calculate scale for rounding
+    // Return NaN if conversion failed
+    if (isNaN(numericValue)) return "N/A";
+
+    // Return 0 if the value is 0
+    if (numericValue === 0) return "0µm";
+
+    // Calculate scale for rounding
     const scale = Math.pow(
       10,
       Math.floor(Math.log10(Math.abs(numericValue))) + 1 - sigFigs,
     );
 
-    // Step 4: Perform rounding
+    // Perform rounding
     const roundedValue = Math.round(numericValue / scale) * scale;
 
-    // Step 5: Add the units back
-    return `${roundedValue}µm`;
+    return `${roundedValue}`;
   };
   console.log(currentVolume?.imageMetadata);
   return (
@@ -1322,269 +1327,7 @@ const VolumeViewer = () => {
               }
               key="settings"
             >
-              <Collapse defaultActiveKey={["renderMode"]}>
-                {/* Render Mode */}
-                <Collapse.Panel
-                  header={
-                    <span>
-                      <Eye size={16} /> Render Mode
-                    </span>
-                  }
-                  key="renderMode"
-                >
-                  <Row>
-                    <Col span={12}>Path Trace</Col>
-                    <Col span={12}>
-                      <Switch
-                        checked={isPT}
-                        onChange={(checked) => setIsPT(checked)}
-                      />
-                    </Col>
-                  </Row>
-                </Collapse.Panel>
-
-                {/* Density Settings */}
-                <Collapse.Panel
-                  header={
-                    <span>
-                      <Sliders size={16} /> Density
-                    </span>
-                  }
-                  key="density"
-                >
-                  <Slider
-                    min={0}
-                    max={100}
-                    value={settings.density}
-                    onChange={(val) => updateSetting("density", val)}
-                  />
-                </Collapse.Panel>
-
-                {/* Mask Alpha */}
-                <Collapse.Panel
-                  header={
-                    <span>
-                      <Image size={16} /> Mask Alpha
-                    </span>
-                  }
-                  key="maskAlpha"
-                >
-                  <Slider
-                    min={0}
-                    max={100}
-                    value={settings.maskAlpha}
-                    onChange={(val) => updateSetting("maskAlpha", val)}
-                  />
-                </Collapse.Panel>
-
-                {/* Exposure */}
-                <Collapse.Panel
-                  header={
-                    <span>
-                      <Sun size={16} /> Exposure
-                    </span>
-                  }
-                  key="exposure"
-                >
-                  <Slider
-                    min={0}
-                    max={100}
-                    value={settings.brightness}
-                    onChange={(val) => updateSetting("brightness", val)}
-                  />
-                </Collapse.Panel>
-
-                {/* Camera Settings */}
-                <Collapse.Panel
-                  header={
-                    <span>
-                      <Camera size={16} /> Camera Settings
-                    </span>
-                  }
-                  key="camera"
-                >
-                  <Row>
-                    <Col span={8}>FOV</Col>
-                    <Col span={16}>
-                      <Slider
-                        min={0}
-                        max={90}
-                        step={1}
-                        value={fov}
-                        onChange={setFov}
-                      />
-                    </Col>
-                  </Row>
-                  <Row>
-                    <Col span={8}>Focal Distance</Col>
-                    <Col span={16}>
-                      <Slider
-                        min={0.1}
-                        max={5.0}
-                        step={0.01}
-                        value={focalDistance}
-                        onChange={setFocalDistance}
-                      />
-                    </Col>
-                  </Row>
-                  <Row>
-                    <Col span={8}>Aperture</Col>
-                    <Col span={16}>
-                      <Slider
-                        min={0.0}
-                        max={0.1}
-                        step={0.001}
-                        value={aperture}
-                        onChange={setAperture}
-                      />
-                    </Col>
-                  </Row>
-                </Collapse.Panel>
-
-                {/* Camera Mode */}
-                <Collapse.Panel
-                  header={
-                    <span>
-                      <Move3d size={16} />
-                      Camera Mode
-                    </span>
-                  }
-                  key="cameraMode"
-                >
-                  <Select
-                    defaultValue={cameraMode}
-                    style={{ width: "100%" }}
-                    onChange={setCameraModeHandler}
-                  >
-                    <Select.Option value="X">X</Select.Option>
-                    <Select.Option value="Y">Y</Select.Option>
-                    <Select.Option value="Z">Z</Select.Option>
-                    <Select.Option value="3D">3D</Select.Option>
-                  </Select>
-                </Collapse.Panel>
-
-                {/* Controls */}
-                <Collapse.Panel
-                  header={
-                    <span>
-                      <Box size={16} /> View Controls
-                    </span>
-                  }
-                  key="controls"
-                >
-                  <Button onClick={toggleTurntable}>
-                    {isTurntable ? "Stop Turntable" : "Start Turntable"}
-                  </Button>
-                  <Button onClick={toggleAxis}>
-                    {showAxis ? "Hide Axis" : "Show Axis"}
-                  </Button>
-                  <Button onClick={toggleBoundingBox}>
-                    {showBoundingBox
-                      ? "Hide Bounding Box"
-                      : "Show Bounding Box"}
-                  </Button>
-                  <Button onClick={toggleScaleBar}>
-                    {showScaleBar ? "Hide Scale Bar" : "Show Scale Bar"}
-                  </Button>
-                  <Row>
-                    <Col span={12}>Background Color</Col>
-                    <Col span={12}>
-                      <Input
-                        type="color"
-                        value={rgbToHex(...backgroundColor)}
-                        onChange={(e) => {
-                          const [r, g, b] = hexToRgb(e.target.value);
-                          const normalizedColor = [r / 255, g / 255, b / 255];
-                          setBackgroundColor(normalizedColor);
-                          if (view3D) {
-                            view3D.setBackgroundColor(normalizedColor);
-                            view3D.redraw();
-                          }
-                        }}
-                      />
-                    </Col>
-                  </Row>
-                  <Row>
-                    <Col span={12}>Bounding Box Color</Col>
-                    <Col span={12}>
-                      <Input
-                        type="color"
-                        value={rgbToHex(...boundingBoxColor)}
-                        onChange={(e) => {
-                          const [r, g, b] = hexToRgb(e.target.value);
-                          const normalizedColor = [r / 255, g / 255, b / 255];
-                          setBoundingBoxColor(normalizedColor);
-                          if (currentVolume && view3D) {
-                            view3D.setBoundingBoxColor(
-                              currentVolume,
-                              normalizedColor,
-                            );
-                            view3D.redraw();
-                          }
-                        }}
-                      />
-                    </Col>
-                  </Row>
-                  <Button onClick={() => flipVolume("X")}>Flip X</Button>
-                  <Button onClick={() => flipVolume("Y")}>Flip Y</Button>
-                  <Button onClick={() => flipVolume("Z")}>Flip Z</Button>
-                </Collapse.Panel>
-
-                {/* Gamma */}
-                <Collapse.Panel header="Gamma" key="gamma">
-                  <Row>
-                    <Col span={8}>Min</Col>
-                    <Col span={16}>
-                      <Slider
-                        min={0}
-                        max={255}
-                        value={settings.levels[0]}
-                        onChange={(value) =>
-                          updateSetting("levels", [
-                            value,
-                            settings.levels[1],
-                            settings.levels[2],
-                          ])
-                        }
-                      />
-                    </Col>
-                  </Row>
-                  <Row>
-                    <Col span={8}>Mid</Col>
-                    <Col span={16}>
-                      <Slider
-                        min={0}
-                        max={255}
-                        value={settings.levels[1]}
-                        onChange={(value) =>
-                          updateSetting("levels", [
-                            settings.levels[0],
-                            value,
-                            settings.levels[2],
-                          ])
-                        }
-                      />
-                    </Col>
-                  </Row>
-                  <Row>
-                    <Col span={8}>Max</Col>
-                    <Col span={16}>
-                      <Slider
-                        min={0}
-                        max={255}
-                        value={settings.levels[2]}
-                        onChange={(value) =>
-                          updateSetting("levels", [
-                            settings.levels[0],
-                            settings.levels[1],
-                            value,
-                          ])
-                        }
-                      />
-                    </Col>
-                  </Row>
-                </Collapse.Panel>
-
+              <Collapse defaultActiveKey={[]}>
                 {/* Channels */}
                 <Collapse.Panel
                   header={
@@ -1685,19 +1428,15 @@ const VolumeViewer = () => {
                             )}
                             onChange={(e) => {
                               const newColor = hexToRgb(e.target.value);
-
-                              // Update channel options first
                               updateChannelOptions(index, { color: newColor });
-
-                              // Then explicitly update the channel material
                               if (currentVolume && view3D) {
                                 view3D.updateChannelMaterial(
                                   currentVolume,
                                   index,
-                                  newColor, // New color for diffuse
-                                  [0, 0, 0], // Specular color
-                                  [0, 0, 0], // Emissive color
-                                  0, // Glossiness
+                                  newColor,
+                                  [0, 0, 0],
+                                  [0, 0, 0],
+                                  0,
                                 );
                                 view3D.updateMaterial(currentVolume);
                                 view3D.redraw();
@@ -1713,28 +1452,25 @@ const VolumeViewer = () => {
                           marginLeft: "-8px",
                         }}
                       >
-                        {" "}
-                        {/* Negative margins to counter parent padding */}
                         <Col span={24}>
                           <div
                             style={{
                               display: "flex",
                               flexDirection: "column",
                               gap: "4px",
-                              padding: "0 8px", // Add padding here instead
+                              padding: "0 8px",
                             }}
                           >
-                            {/* First row */}
                             <div
                               style={{
                                 display: "flex",
                                 gap: "4px",
-                                width: "100%", // Ensure full width
+                                width: "100%",
                               }}
                             >
                               <Button
-                                size="small" // Make buttons smaller
-                                style={{ flex: 1, minWidth: 0 }} // minWidth: 0 prevents button from overflowing
+                                size="small"
+                                style={{ flex: 1, minWidth: 0 }}
                                 onClick={() =>
                                   updateChannelLut(index, "autoIJ")
                                 }
@@ -1749,7 +1485,6 @@ const VolumeViewer = () => {
                                 Min/Max
                               </Button>
                             </div>
-                            {/* Second row */}
                             <div
                               style={{
                                 display: "flex",
@@ -1781,6 +1516,182 @@ const VolumeViewer = () => {
                       </Row>
                     </div>
                   ))}
+                </Collapse.Panel>
+
+                {/* Gamma */}
+                <Collapse.Panel
+                  header={
+                    <span>
+                      <Wand2 size={16} /> Gamma
+                    </span>
+                  }
+                  key="gamma"
+                >
+                  <Row>
+                    <Col span={8}>Min</Col>
+                    <Col span={16}>
+                      <Slider
+                        min={0}
+                        max={255}
+                        value={settings.levels[0]}
+                        onChange={(value) =>
+                          updateSetting("levels", [
+                            value,
+                            settings.levels[1],
+                            settings.levels[2],
+                          ])
+                        }
+                      />
+                    </Col>
+                  </Row>
+                  <Row>
+                    <Col span={8}>Mid</Col>
+                    <Col span={16}>
+                      <Slider
+                        min={0}
+                        max={255}
+                        value={settings.levels[1]}
+                        onChange={(value) =>
+                          updateSetting("levels", [
+                            settings.levels[0],
+                            value,
+                            settings.levels[2],
+                          ])
+                        }
+                      />
+                    </Col>
+                  </Row>
+                  <Row>
+                    <Col span={8}>Max</Col>
+                    <Col span={16}>
+                      <Slider
+                        min={0}
+                        max={255}
+                        value={settings.levels[2]}
+                        onChange={(value) =>
+                          updateSetting("levels", [
+                            settings.levels[0],
+                            settings.levels[1],
+                            value,
+                          ])
+                        }
+                      />
+                    </Col>
+                  </Row>
+                </Collapse.Panel>
+
+                {/* Exposure */}
+                <Collapse.Panel
+                  header={
+                    <span>
+                      <Sun size={16} /> Exposure
+                    </span>
+                  }
+                  key="exposure"
+                >
+                  <Slider
+                    min={0}
+                    max={100}
+                    value={settings.brightness}
+                    onChange={(val) => updateSetting("brightness", val)}
+                  />
+                </Collapse.Panel>
+
+                {/* Camera Mode */}
+                <Collapse.Panel
+                  header={
+                    <span>
+                      <Move3d size={16} /> Camera Mode
+                    </span>
+                  }
+                  key="cameraMode"
+                >
+                  <Select
+                    defaultValue={cameraMode}
+                    style={{ width: "100%" }}
+                    onChange={setCameraModeHandler}
+                  >
+                    <Select.Option value="X">X</Select.Option>
+                    <Select.Option value="Y">Y</Select.Option>
+                    <Select.Option value="Z">Z</Select.Option>
+                    <Select.Option value="3D">3D</Select.Option>
+                  </Select>
+                </Collapse.Panel>
+
+                {/* View Controls */}
+                <Collapse.Panel
+                  header={
+                    <span>
+                      <Box size={16} /> View Controls
+                    </span>
+                  }
+                  key="controls"
+                >
+                  <Button
+                    style={{ minWidth: "160px" }}
+                    onClick={toggleTurntable}
+                  >
+                    {isTurntable ? "Stop Turntable" : "Start Turntable"}
+                  </Button>
+                  <Button style={{ minWidth: "160px" }} onClick={toggleAxis}>
+                    {showAxis ? "Hide Axis" : "Show Axis"}
+                  </Button>
+                  <Button
+                    style={{ minWidth: "160px" }}
+                    onClick={toggleBoundingBox}
+                  >
+                    {showBoundingBox
+                      ? "Hide Bounding Box"
+                      : "Show Bounding Box"}
+                  </Button>
+                  <Button
+                    style={{ minWidth: "160px" }}
+                    onClick={toggleScaleBar}
+                  >
+                    {showScaleBar ? "Hide Scale Bar" : "Show Scale Bar"}
+                  </Button>
+                  <Row>
+                    <Col span={12}>Background Color</Col>
+                    <Col span={12}>
+                      <Input
+                        type="color"
+                        value={rgbToHex(...backgroundColor)}
+                        onChange={(e) => {
+                          const [r, g, b] = hexToRgb(e.target.value);
+                          const normalizedColor = [r / 255, g / 255, b / 255];
+                          setBackgroundColor(normalizedColor);
+                          if (view3D) {
+                            view3D.setBackgroundColor(normalizedColor);
+                            view3D.redraw();
+                          }
+                        }}
+                      />
+                    </Col>
+                  </Row>
+                  <Row>
+                    <Col span={12}>Bounding Box Color</Col>
+                    <Col span={12}>
+                      <Input
+                        type="color"
+                        value={rgbToHex(...boundingBoxColor)}
+                        onChange={(e) => {
+                          const [r, g, b] = hexToRgb(e.target.value);
+                          const normalizedColor = [r / 255, g / 255, b / 255];
+                          setBoundingBoxColor(normalizedColor);
+                          if (currentVolume && view3D) {
+                            view3D.setBoundingBoxColor(
+                              currentVolume,
+                              normalizedColor,
+                            );
+                            view3D.redraw();
+                          }
+                        }}
+                      />
+                    </Col>
+                  </Row>
+                  <Button onClick={() => flipVolume("X")}>Flip X</Button>
+                  <Button onClick={() => flipVolume("Y")}>Flip Y</Button>
+                  <Button onClick={() => flipVolume("Z")}>Flip Z</Button>
                 </Collapse.Panel>
 
                 {/* Clip Region */}
@@ -1865,6 +1776,164 @@ const VolumeViewer = () => {
                     </Col>
                   </Row>
                 </Collapse.Panel>
+
+                {/* Camera Settings */}
+                <Collapse.Panel
+                  header={
+                    <span>
+                      <Camera size={16} /> Camera Settings
+                    </span>
+                  }
+                  key="camera"
+                >
+                  <Row>
+                    <Col span={12}>FOV</Col>
+                    <Col span={12}>
+                      <Slider
+                        min={0}
+                        max={90}
+                        step={1}
+                        value={fov}
+                        onChange={setFov}
+                      />
+                    </Col>
+                  </Row>
+                  <Row>
+                    <Col span={12}>Focal Distance</Col>
+                    <Col span={12}>
+                      <Slider
+                        min={0.1}
+                        max={5.0}
+                        step={0.01}
+                        value={focalDistance}
+                        onChange={setFocalDistance}
+                      />
+                    </Col>
+                  </Row>
+                  <Row>
+                    <Col span={12}>Aperture</Col>
+                    <Col span={12}>
+                      <Slider
+                        min={0.0}
+                        max={0.1}
+                        step={0.001}
+                        value={aperture}
+                        onChange={setAperture}
+                      />
+                    </Col>
+                  </Row>
+                </Collapse.Panel>
+
+                {/* Render Mode */}
+                <Collapse.Panel
+                  header={
+                    <span>
+                      <Eye size={16} /> Render Mode
+                    </span>
+                  }
+                  key="renderMode"
+                >
+                  <Row>
+                    <Col span={12}>Path Trace</Col>
+                    <Col span={12}>
+                      <Switch
+                        checked={isPT}
+                        onChange={(checked) => setIsPT(checked)}
+                      />
+                    </Col>
+                  </Row>
+                </Collapse.Panel>
+                {isPT && (
+                  <>
+                    {/* Density */}
+                    <Collapse.Panel
+                      header={
+                        <span>
+                          <Sliders size={16} /> Density
+                        </span>
+                      }
+                      key="density"
+                    >
+                      <Slider
+                        min={0}
+                        max={100}
+                        value={settings.density}
+                        onChange={(val) => updateSetting("density", val)}
+                      />
+                    </Collapse.Panel>
+
+                    {/* Ray Steps */}
+                    <Collapse.Panel
+                      header={
+                        <span>
+                          <Maximize2 size={16} /> Ray Steps
+                        </span>
+                      }
+                      key="raySteps"
+                    >
+                      <div className="setting-group">
+                        <label>Primary Ray</label>
+                        <Slider
+                          min={1}
+                          max={40}
+                          step={0.1}
+                          value={primaryRay}
+                          onChange={setPrimaryRay}
+                        />
+                      </div>
+                      <div className="setting-group">
+                        <label>Secondary Ray</label>
+                        <Slider
+                          min={1}
+                          max={40}
+                          step={0.1}
+                          value={secondaryRay}
+                          onChange={setSecondaryRay}
+                        />
+                      </div>
+                    </Collapse.Panel>
+
+                    {/* Sampling Rate */}
+                    <Collapse.Panel
+                      header={
+                        <span>
+                          <Box size={16} /> Sampling Rate
+                        </span>
+                      }
+                      key="sampling"
+                    >
+                      <Row>
+                        <Col span={12}>Pixel Sampling Rate</Col>
+                        <Col span={12}>
+                          <Slider
+                            min={0.1}
+                            max={1.0}
+                            step={0.01}
+                            value={samplingRate}
+                            onChange={updatePixelSamplingRate}
+                          />
+                        </Col>
+                      </Row>
+                    </Collapse.Panel>
+                  </>
+                )}
+
+                {/* Mask Alpha */}
+                <Collapse.Panel
+                  header={
+                    <span>
+                      <Image size={16} /> Mask Alpha
+                    </span>
+                  }
+                  key="maskAlpha"
+                >
+                  <Slider
+                    min={0}
+                    max={100}
+                    value={settings.maskAlpha}
+                    onChange={(val) => updateSetting("maskAlpha", val)}
+                  />
+                </Collapse.Panel>
               </Collapse>
             </TabPane>
 
@@ -1882,10 +1951,7 @@ const VolumeViewer = () => {
                   <h4>Volume Information</h4>
                   <div className="metadata-item">
                     <label>Name:</label>
-                    <span>
-                      {currentVolume.loader?.url?.split("/").pop() ||
-                        currentVolume.name}
-                    </span>
+                    <span>{currentVolume.name}</span>
                   </div>
                   {currentVolume.imageInfo && (
                     <>
@@ -1924,10 +1990,9 @@ const VolumeViewer = () => {
                           <div className="metadata-item">
                             <label>Physical Size per Pixel:</label>
                             <span>
-                              {currentVolume.imageMetadata[
-                                "Physical size per pixel"
-                              ]
-                                ? `${roundToSignificantFigure(currentVolume.imageMetadata["Physical size per pixel"]?.x)} × ${roundToSignificantFigure(currentVolume.imageMetadata["Physical size per pixel"]?.y)} × ${roundToSignificantFigure(currentVolume.imageMetadata["Physical size per pixel"]?.z)}`
+                              {currentVolume.imageInfo &&
+                              currentVolume.imageInfo.physicalPixelSize
+                                ? `${currentVolume.imageMetadata["Physical size per pixel"]?.x} × ${currentVolume.imageMetadata["Physical size per pixel"]?.y} × ${currentVolume.imageMetadata["Physical size per pixel"]?.y}`
                                 : "N/A"}
                             </span>
                           </div>
