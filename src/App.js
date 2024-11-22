@@ -1,23 +1,46 @@
-import logo from './logo.svg';
+import logo from './components/ISAS_Logo_Standard.34684188-1.svg';
 import './App.css';
+import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
+import WelcomePage from './components/WelcomePage';
+import NotFoundPage from './components/NotFoundPage';
+import Footer from './components/Footer';
+
+import VolumeViewer from './components/VolumeViewer';
 
 function App() {
+  const headerStyle = {
+    backgroundColor: 'black',
+    color: 'white',
+    padding: '10px',
+    textAlign: 'center',
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1000
+  };
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <Router>
+        <header style={headerStyle}>
+          <nav className="navbar">
+            <Link to="/">
+              <img src={logo} alt="ISAS Logo" className="logo" />
+            </Link>
+            <h1 className="navbar-title">ISAS LSFM</h1>
+          </nav>
+        </header>
+        {/* Wrapping the Routes and Footer within a flex container */}
+        <main className="content-wrap">
+          <Routes>
+            <Route exact path="/" element={<WelcomePage />} />
+            <Route exact path="/dataset/1" element={<VolumeViewer />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+          <Footer />
+        </main>
+      </Router>
     </div>
   );
 }

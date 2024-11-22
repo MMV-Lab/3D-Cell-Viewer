@@ -1,38 +1,1449 @@
+:root {
+  --color-primary: #000000; /* Black for primary */
+  --color-primary-dark: #333333; /* Dark grey as a substitute for dark primary */
+  --color-secondary: #ffffff; /* White for secondary */
+  --color-border: #e0e0e0; /* You might keep this for borders */
+  --color-background: #f5f5f5; /* Light grey for backgrounds, if suitable */
+  --color-tooltip: #000000; /* Black for tooltips */
+  --color-tooltip-text: #ffffff; /* White for tooltip text */
+}
 .App {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh; /* Make sure the app fills the viewport height */
+  padding-top: 60px; /* Adjusted for the fixed header */
+  box-sizing: border-box;
+}
+
+.content-wrap {
+  flex: 1; /* Allows this container to grow and fill available space, pushing the footer down */
+  display: flex;
+  flex-direction: column;
+  margin-bottom: -60px; /* Adjust this value based on your footer's height */
+}
+
+/* Adjust the footer CSS */
+.app-footer {
+  background-color: var(
+    --color-primary
+  ); /* Using your primary color variable */
+  color: var(--color-secondary);
+  padding: 20px; /* Adjust the padding as needed */
   text-align: center;
-}
-
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+  width: 100%;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
+  border-top: 1px solid var(--color-border); /* Optional border */
+  margin-top: auto;
+}
+
+body {
+  font-family: "Roboto", sans-serif;
+}
+body,
+html {
+  margin: auto;
+  padding: 0;
+  max-width: 100vw;
+  overflow-x: hidden; /* Prevent horizontal scroll */
+}
+
+.container {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  width: 95%; /* Adjust the percentage as needed */
+  margin: 40px auto 40px 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.main-content {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-start;
+  position: relative;
+  min-width: 98%;
+  width: 100%;
+}
+
+.content-container {
+  flex: 1; /* Each container occupies 50% of the horizontal space */
+  margin-right: 20px; /* Add some spacing between the containers */
+  overflow: hidden; /* Prevent content from overflowing */
+}
+
+.rounds-container {
+  display: grid;
+  grid-template-columns: repeat(4, calc(25% - 10px));
+  gap: 4px;
+  /* margin-bottom: 20px; */
+  /* margin-left: -153px; */
+  /* margin-top: -97px; */
+  z-index: 50;
+  position: relative;
+  top: 3px;
+  flex-grow: 1;
+}
+
+.grid-with-indicators {
+  display: grid;
+  padding-top: 21px;
+  position: relative;
+  width: auto;
+  gap: 5px;
+}
+
+.grid-with-indicators .horizontal-indicators {
+  grid-column: 2;
+  grid-row: 1;
+  margin-left: -2px;
+}
+
+.grid-with-indicators .vertical-indicators {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.grid-with-indicators .grid-container {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.grid-with-indicators:hover {
+  transform: scale(1.5); /* Adjust the scale value as needed */
+  z-index: 100; /* Ensure the zoomed element is above others */
+  transition: transform 0.3s ease; /* Smooth zoom effect */
+  /* position: absolute; Use absolute positioning */
+}
+
+.grid-container {
+  display: grid;
+  grid-template-columns: repeat(
+    8,
+    15px
+  ); /* Keeps the 15px width for each cell */
+  grid-template-rows: repeat(
+    8,
+    15px
+  ); /* Ensures rows are also defined for clarity */
+  border: 1px solid #e0e0e0; /* Maintains the border */
+  background-color: #f5f5f5; /* Keeps the background color */
+  border-radius: 5px; /* Maintains the border-radius */
+  width: 120px; /* Adjusted width: 8 cells * 15px each */
+  height: 120px; /* Adjusted height: 8 cells * 15px each */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); /* Keeps the shadow */
+}
+
+.grid-cell {
+  background-color: #adacaa;
+  border: 0.25px inherit;
+  border-color: #9e9c9d;
+  box-sizing: border-box;
+  cursor: pointer;
+  height: 15px;
+  position: relative;
+  transition:
+    box-shadow 0.3s ease,
+    transform 0.3s ease;
+  width: 15px;
+}
+
+.tooltip {
+  visibility: hidden;
+  position: absolute;
+  background-color: var(--color-tooltip);
+  color: var(--color-tooltip-text);
+  padding: 8px 10px;
+  border-radius: 5px;
+  border: 1px solid #fff;
+  z-index: 1010 !important;
+  font-size: 0.7em;
+  width: 130px;
+  text-align: left;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+  transition:
+    visibility 0.2s ease,
+    opacity 0.2s ease;
+  opacity: 0; /* Start with an invisible tooltip */
+  pointer-events: none; /* Prevents the tooltip from blocking mouse events */
+}
+
+.grid-cell:hover .tooltip {
+  visibility: visible;
+  opacity: 1; /* Make the tooltip visible on hover */
+  transition-delay: 0.5s; /* Add a delay to the transition */
+}
+
+.grid-cell:hover {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3); /* More pronounced shadow on hover */
+  transform: scale(1.05);
+  z-index: 1;
+}
+
+.grid-cell.selected {
+  position: relative; /* This ensures the pseudo-element is positioned relative to this cell */
+  overflow: hidden; /* Prevents the pseudo-element from spilling outside the cell */
+}
+
+.grid-cell.selected::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(0, 0, 0, 0.2),
+    rgba(0, 0, 0, 0.2) 10px,
+    transparent 10px,
+    transparent 20px /* The size of the stripes */
+  );
+  z-index: 1;
+}
+
+.tiff-player img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  /* object-fit: cover; This ensures the image covers the available space, similar to your video setup */
+}
+
+.player-controls {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background-color: rgba(
+    0,
+    0,
+    0,
+    0.5
+  ); /* Semi-transparent background for visibility */
+}
+
+.player-controls button {
+  cursor: pointer;
+  padding: 5px 10px;
+  background-color: var(
+    --color-primary
+  ); /* Use primary color for button background */
+  color: var(--color-secondary); /* Use secondary color for text */
+  border: none;
+  border-radius: 5px;
+  outline: none;
+  transition: background-color 0.3s ease;
+}
+
+.player-controls button:hover {
+  background-color: var(
+    --color-primary-dark
+  ); /* Darker shade for hover state */
+}
+
+.progress-bar {
+  flex-grow: 1;
+  height: 20px;
+  background-color: #e9e9e9;
+  border-radius: 10px;
+  margin-left: 10px;
+  position: relative;
+  overflow: hidden;
+  background-color: var(--color-border);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.progress {
+  height: 100%;
+  border-radius: 10px;
+  background-color: var(
+    --color-primary
+  ); /* Use primary color for progress bar */
+  transition: width 0.3s ease;
+}
+
+.scrubber {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
+  background-color: var(
+    --color-secondary
+  ); /* Use secondary color for scrubber */
+  border: 2px solid var(--color-primary); /* Border color from primary */
+  border-radius: 50%;
+  cursor: pointer;
+  z-index: 2;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.tiff-player {
+  position: relative;
+  width: 100%;
+  padding-top: 56.25%; /* Adjust this value to match the aspect ratio of your TIFF images */
+  top: 76px;
+  flex-grow: 2; /* This ensures that the player takes up the space it needs, similar to your mp4 player setup */
+}
+
+.overlay {
+  position: absolute; /* Positions .overlay in relation to .tiff-player */
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0; /* These four properties ensure .overlay matches the size of .tiff-player */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.1);
+  z-index: 1; /* Ensures .overlay stacks above the img */
+  cursor: pointer;
+  pointer-events: none;
+}
+
+.loading-bar {
+  width: 100%;
+  height: 4px;
+  background-color: #e0e0e0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 10;
+}
+
+.loading-progress {
+  height: 100%;
+  width: 0;
+  background-color: #007bff;
+  transition: width 0.3s ease;
+}
+
+.grid-cell.selected {
+  border: 2px solid #007bff;
+}
+
+.round-header {
+  position: absolute;
+  top: 0;
+  left: 57%;
+  transform: translateX(-50%);
+  background-color: var(--color-secondary); /* light orange background */
+  font-weight: bold;
+  z-index: 1;
+  padding: 2px 10px;
+  border-radius: 2px; /* rounding the corners */
+  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2); /* optional shadow for a lifted effect */
+}
+
+button {
+  margin: 10px;
+  padding: 10px 20px;
+  display: inline-block;
+  text-align: center;
+  vertical-align: middle;
+  cursor: pointer;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+  outline: none;
+  font-size: 0.9em;
+  line-height: 1;
+  width: 120px;
+  height: 40px;
+  background-color: var(--color-primary);
+  color: var(--color-tooltip-text);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Adds subtle shadow for depth */
+}
+
+button:hover {
+  background-color: var(--color-primary-dark);
+}
+
+button:disabled {
+  background-color: #e0e0e0;
+  cursor: not-allowed;
+}
+
+.grid-cell:not(.selected):hover {
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  transform: scale(1.05);
+  z-index: 1;
+}
+
+.grid-container:hover {
+  border-color: #007bff;
+}
+
+.horizontal-indicators,
+.vertical-indicators {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #f9f9f9;
+  padding: 5px;
+  font-size: 0.7em; /* Smaller font size */
+}
+
+.horizontal-indicators {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: auto;
+  flex-direction: row;
+  padding: 5px 5px 5px 0;
+}
+
+.vertical-indicators {
+  height: 100%;
+  width: 0px;
+  flex-direction: column;
+  padding: 0px;
+}
+
+.indicator-item {
+  text-align: center;
+  font-size: 0.8em;
+  font-weight: bold;
+  margin: 0 5px;
+}
+
+.rounds-header-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px; /* Adding some spacing between the round headers and the rest of the content */
+}
+
+.rounds-header-group {
+  display: flex;
+  justify-content: space-between; /* Spread the round headers evenly */
+  width: 100%; /* Take the full width of the parent container */
+  background-color: #ffa500; /* Orange background */
+  padding: 5px; /* Add some padding around the group */
+  margin: 5px 0; /* Add some margin between the groups */
+  border-radius: 5px; /* Add rounded corners */
+  box-shadow: 0px 2px 15px rgba(0, 0, 0, 0.1); /* Add a subtle shadow for depth */
+}
+
+.color-legend {
+  display: flex;
+  flex-direction: column; /* Align legend items vertically */
+  padding-right: 10px; /* Space between legend and histogram */
+  padding-top: 49px;
+}
+
+.gradient-box {
+  height: 200px; /* Match the height of your histogram */
+  width: 20px; /* Width of the color bar */
+  margin-bottom: 10px; /* Space between the gradient and labels */
+}
+
+.legend-marks {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.legend-mark {
+  position: absolute;
+  left: -1px;
+  transform: translate(0, -1468%);
+  font-size: 0.8em;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.side-panel {
+  background-color: #fff; /* White background */
+  margin-top: -62px;
+  border-radius: 4px; /* Rounded corners */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Shadow for depth */
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+  width: 90%;
+}
+
+.side-panel .panel-header {
+  font-size: 1.25rem;
+  background-color: var(--color-primary); /* Black background */
+  color: var(--color-secondary); /* White text */
+  text-align: center;
+  font-weight: 500;
+  padding: 8px 0; /* Padding for the header */
+  border-bottom: 1px solid var(--color-border);
+  width: 100%;
+}
+
+.side-panel .panel-content {
+  padding: 16px;
+  flex-grow: 1; /* Allows this element to fill up the remaining space */
+  margin-left: -32px;
+  overflow-y: auto; /* Allows scrolling if content is too long */
+}
+
+.side-panel .panel-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-border);
+  transition: background-color 0.2s;
+  cursor: pointer;
+}
+
+.side-panel .panel-item:hover {
+  background-color: var(--color-background);
+}
+
+.histogram {
+  margin-top: 20px; /* Space above the histogram */
+}
+
+.histogram-bar {
+  display: flex;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.histogram-bar-fill {
+  height: 20px;
+  background-color: var(--color-primary); /* Black bars for the histogram */
+  margin-right: 10px;
+  transition: width 3s ease-in-out;
+}
+
+.histogram-bar-label {
+  font-size: 0.8em;
+  color: var(--color-primary-dark); /* Dark grey text */
+}
+
+/* For screens wider than 1920px */
+@media (min-width: 1920px) {
+  .container {
+    width: 90%; /* You can go up to 100% if you want to use all the horizontal space */
+    max-width: none; /* This will allow the container to adjust to the percentage width */
+  }
+
+  .main-content {
+    flex: 0 0 100%; /* Adjust the flex-basis as needed */
+  }
+}
+
+/* For screens wider than 3840px */
+@media (min-width: 3840px) {
+  .container {
+    width: 80%; /* Less percentage as the screen is very wide */
+  }
+}
+
+.navbar {
+  background-color: black; /* As per your color scheme */
   color: white;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* This spreads out the logo and title */
 }
 
-.App-link {
-  color: #61dafb;
+.navbar h1 {
+  margin-top: 0; /* Removes any top margin from the h1 for accurate centering */
+  flex-grow: 1; /* Allows the h1 to take up the remaining space */
+  text-align: center; /* Centers the title in the available space */
 }
 
-@keyframes App-logo-spin {
+.logo {
+  height: 50px;
+  margin-right: 10px; /* Adds a little space between logo and title */
+}
+
+.NotFound {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  height: 100vh;
+  color: white;
+  background-color: black;
+  text-align: center;
+  overflow: hidden;
+}
+
+.solar-system {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
+}
+
+.sun {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100px;
+  height: 100px;
+  background-color: yellow;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 100px yellow; /* Glowing effect */
+}
+
+.orbit {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 300px;
+  height: 300px;
+  border: 1px dashed white;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.planet {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 20px;
+  height: 20px;
+  background-color: blue;
+  border-radius: 50%;
+  animation: orbitAnimation 10s linear infinite;
+}
+
+@keyframes orbitAnimation {
   from {
-    transform: rotate(0deg);
+    transform: rotate(0deg) translateX(150px);
   }
   to {
+    transform: rotate(360deg) translateX(150px);
+  }
+}
+
+.NotFound-content {
+  position: relative;
+  z-index: 2;
+}
+
+.NotFound-title {
+  font-size: 5rem;
+  margin: 0;
+}
+
+.NotFound-message {
+  font-size: 1.5rem;
+}
+
+.NotFound-link {
+  display: inline-block;
+  margin-top: 20px;
+  padding: 10px 20px;
+  background-color: #ff4500;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  text-decoration: none;
+  transition: background-color 0.3s;
+}
+
+.NotFound-link:hover {
+  background-color: #ff5733;
+}
+
+.histogram-tooltip {
+  position: absolute;
+  visibility: hidden;
+  background-color: var(--color-tooltip);
+  color: var(--color-tooltip-text);
+  text-align: center;
+  border-radius: 4px;
+  padding: 5px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  z-index: 2;
+  white-space: nowrap;
+  pointer-events: none;
+  transition:
+    visibility 0.2s ease,
+    opacity 0.2s ease;
+  opacity: 0;
+  top: -35px; /* Adjust the position above the hovered element */
+  left: 50%;
+  transform: translateX(-50%); /* Center the tooltip */
+}
+
+.histogram-bar:hover .histogram-tooltip {
+  visibility: visible;
+  opacity: 1;
+}
+
+.histogram-bar {
+  position: relative; /* To position the tooltip */
+}
+
+.zoom-controls {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.zoom-controls button {
+  margin-bottom: 10px;
+}
+
+.tooltip.top-left {
+  bottom: 100%;
+  left: 0;
+  transform: translateY(-10px); /* Adjust as needed */
+}
+
+.tooltip.top-right {
+  bottom: 100%;
+  right: 0;
+  transform: translateY(-10px); /* Adjust as needed */
+}
+
+.tiff-player-placeholder,
+.loading-overlay {
+  position: relative; /* Needed for absolute positioning of the overlay */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 684px;
+  width: 100%;
+  background-color: #f5f5f5;
+  border: 1px solid #d3d3d3;
+  border-radius: 5px;
+  margin-top: 50px;
+  /* margin-left: -104px; */
+  color: #333;
+  text-align: center;
+  padding: 20px;
+}
+
+.loading-overlay {
+  /* position: absolute; */
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: var(
+    --color-background
+  ); /* Semi-transparent white background */
+  z-index: 10; /* Ensures it's above other elements */
+}
+
+.loading-circle {
+  border: 5px solid #f3f3f3; /* Light grey border */
+  border-top: 5px solid #3498db; /* Blue border */
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 2s linear infinite;
+}
+
+.tiff-player-placeholder p {
+  margin-top: 15px;
+  font-size: 1.1em; /* Slightly larger font size */
+  color: #333; /* Darker text for better readability */
+}
+
+/* Define a specific size for the chart container */
+.histogram-chart-container {
+  width: 100%; /* Use the full width of the side panel */
+  height: 300px; /* Set a fixed height for the chart */
+}
+
+.histogram-and-legend-container {
+  display: flex;
+  align-items: stretch; /* Align items vertically in the center */
+  flex-direction: column;
+}
+
+.histogram-and-legend-container-contents {
+  display: flex;
+  align-items: stretch; /* Align items vertically in the center */
+}
+
+.loading-circle {
+  border: 5px solid #f3f3f3; /* Light grey border */
+  border-top: 5px solid #3498db; /* Blue border */
+  border-radius: 50%;
+  width: 60px; /* Same size as FaPlay icon */
+  height: 60px; /* Same size as FaPlay icon */
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
     transform: rotate(360deg);
+  }
+}
+
+.jumbotron {
+  background-color: #f9f9f9; /* Light grey background */
+  padding: 20px;
+  margin-top: 43px; /* Small top margin to create spacing */
+  border-radius: 5px; /* Rounded corners */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Shadow for depth */
+  text-align: center; /* Center the text */
+  height: 150px; /* Fixed height to prevent resizing */
+  overflow: hidden; /* Hide overflowing content */
+}
+
+.jumbotron h2 {
+  margin-top: 0;
+  color: var(--color-primary); /* Black color for the heading */
+}
+
+.jumbotron p {
+  color: var(--color-primary-dark); /* Dark grey for the paragraph */
+}
+
+button {
+  display: inline-flex; /* Use flex to align items horizontally */
+  align-items: center; /* Center items vertically within the button */
+  justify-content: center; /* Center items horizontally within the button */
+  margin: 10px;
+  padding: 10px 15px; /* Adjust padding to give more space */
+  text-align: center;
+  vertical-align: middle;
+  cursor: pointer;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+  outline: none;
+  font-size: 0.9em;
+  line-height: 1;
+  min-width: 122px; /* Set a minimum width to accommodate text and icon */
+  height: 46px;
+  background-color: var(--color-primary);
+  color: var(--color-tooltip-text);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+button:hover {
+  background-color: var(--color-primary-dark);
+}
+
+button:disabled {
+  background-color: #e0e0e0;
+  cursor: not-allowed;
+}
+
+/* Adjust icon size and margin */
+button svg {
+  width: 20px; /* Adjust the icon size */
+  height: 20px; /* Adjust the icon size */
+  margin-right: 5px; /* Add some space between icon and text */
+}
+
+.selected-tiff-tags {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.tiff-tag {
+  background-color: #007bff;
+  color: white;
+  padding: 5px 10px;
+  margin-right: 5px;
+  margin-bottom: 5px;
+  border-radius: 15px;
+  font-size: 0.85em;
+  white-space: nowrap;
+}
+
+.color-legend {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.gradient-box {
+  width: 30px; /* Adjust as needed */
+  height: 200px; /* Adjust as needed */
+  margin: 10px 0;
+}
+
+.legend-labels .legend-label {
+  position: absolute;
+  left: 35px; /* Adjust as needed */
+  /* Other styling as needed */
+}
+
+.mp4-player {
+  position: relative;
+  width: 100%;
+  padding-top: 50.25%;
+  top: 75px;
+  flex-grow: 2;
+  min-width: 320px; /* Base min-width for small devices */
+}
+
+.mp4-player video {
+  position: absolute;
+  top: -25px;
+  left: 0;
+  width: 100%;
+  max-height: 95%;
+  object-fit: cover;
+}
+
+/* Adjust for tablets */
+@media (max-width: 768px) {
+  .container {
+    width: 100%; /* Use more of the screen width on smaller devices */
+    margin: 20px auto; /* Adjust margin to fit smaller screens */
+  }
+}
+
+/* Adjust for larger screens */
+@media (min-width: 1024px) {
+  .container {
+    width: 90%; /* Adjust width as needed */
+    margin: 40px auto; /* Center with appropriate margin */
+  }
+}
+
+.polar-plot-display {
+  background-color: var(--color-secondary); /* White background */
+  margin: 20px auto; /* Center the widget and add vertical space */
+  padding: 15px; /* Padding inside the container */
+  border-radius: 8px; /* Rounded corners */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+  max-width: 95%; /* Limit the maximum width */
+  text-align: center; /* Center align the content */
+}
+
+.polar-plot-display img {
+  max-width: 100%; /* Ensure the image is responsive */
+  height: auto; /* Maintain aspect ratio */
+  border-radius: 5px; /* Slightly rounded corners for the image */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* Soft shadow around the image */
+}
+
+.polar-plot-display h2 {
+  margin-bottom: 15px; /* Space between title and image */
+  color: var(--color-primary); /* Black color for the text */
+  font-size: 1.5rem; /* Larger font size for the title */
+}
+.polar-plot-container {
+  text-align: center;
+  padding: 10px;
+  margin-top: 20px;
+  transition: transform 0.3s ease-in-out;
+  display: flex;
+  flex-direction: column; /* This will stack children vertically */
+  align-items: center; /* Center align items for good measure */
+}
+
+.polar-plot-image {
+  max-width: 95%;
+  height: auto;
+  border-radius: 10px; /* Rounded corners for the image */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Shadow for depth */
+  transition: all 0.3s ease-in-out;
+}
+
+.polar-plot-container:hover .polar-plot-image {
+  transform: scale(1.05); /* Slightly enlarge the image on hover */
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* More pronounced shadow on hover */
+}
+
+/* Animation for the loading of the polar plot */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.polar-plot-image {
+  animation: fadeIn 1s; /* Apply the animation to the image */
+}
+
+.typewriter-effect {
+  white-space: pre-wrap; /* Allows for line breaks in your text */
+  font-family: monospace; /* Gives the typewriter effect more authenticity */
+}
+
+.cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background-color: currentColor;
+  margin-left: 2px;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  50.01%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.typewriter-link {
+  color: #007bff;
+  text-decoration: none;
+}
+
+.typewriter-link:hover,
+.typewriter-link:focus {
+  text-decoration: underline;
+}
+
+.selected-tiff-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center; /* Ensure tags are aligned in the middle */
+  gap: 5px; /* Add some space between the tags */
+  margin-top: 10px;
+}
+
+.tiff-tag {
+  background-color: #007bff;
+  color: white;
+  padding: 2px 5px; /* Reduce padding for a more compact look */
+  border-radius: 10px; /* Rounded corners for a chip-like appearance */
+  font-size: 0.75em; /* Smaller font size for the tag */
+  display: flex;
+  align-items: center; /* Center the content vertically */
+  justify-content: center; /* Center the content horizontally */
+  gap: 5px; /* Space between text and 'X' button */
+  white-space: nowrap; /* Prevent wrapping inside the tag */
+}
+
+.tiff-tag .tiff-tag-remove {
+  display: inline-block;
+  width: 12px; /* Fixed width */
+  height: 12px; /* Fixed height */
+  line-height: 12px; /* Aligns the 'X' vertically */
+  text-align: center;
+  background-color: transparent;
+  color: white;
+  border-radius: 50%; /* Circular button */
+  padding: 0;
+  font-size: 12px; /* Adjust based on your design */
+  cursor: pointer;
+}
+
+.tiff-tag .tiff-tag-remove:hover {
+  background-color: rgba(255, 255, 255, 0.2); /* Slight highlight on hover */
+}
+
+@media (min-width: 768px) {
+  .mp4-player {
+    min-width: 596px; /* Adjust for tablets and small desktops */
+  }
+}
+
+@media (min-width: 1024px) {
+  .mp4-player {
+    min-width: 470px; /* Adjust for larger desktops */
+  }
+
+  body,
+  html {
+    overflow-x: initial;
+  }
+}
+
+.histogram-description p {
+  font-size: 0.9em;
+  color: var(
+    --color-primary-dark
+  ); /* Assuming this is a darker shade for text */
+  padding: 10px;
+  background-color: var(--color-background);
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-top: 20px;
+}
+
+.app-footer p {
+  margin: 10px 0;
+  font-size: 1rem; /* Adjust the font size as needed */
+  line-height: 1.5; /* Improves readability */
+  max-width: 80%; /* Limits the width of the text to improve readability */
+  text-align: justify; /* Justifies the text for a neater appearance */
+}
+
+.app-footer a {
+  color: var(
+    --color-highlight
+  ); /* Highlight color for links, assuming you define this */
+  text-decoration: underline;
+}
+
+.app-footer a:hover {
+  color: var(--color-secondary); /* Color change on hover for visual feedback */
+}
+
+/* Additional styles for responsiveness */
+@media (max-width: 768px) {
+  .app-footer p {
+    font-size: 0.9rem; /* Slightly smaller font size for smaller screens */
+    max-width: 95%; /* Increase width percentage for smaller screens */
+  }
+}
+
+.download-instructions ol {
+  margin-left: 20px;
+}
+
+.download-button:enabled {
+  background-color: #4caf50; /* Green */
+}
+
+.download-button:disabled {
+  background-color: #ccc;
+  color: #666;
+  cursor: not-allowed;
+}
+
+.selected-tiff-tags {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.tiff-tag {
+  margin: 5px;
+  background-color: #007bff;
+  color: white;
+  padding: 5px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.tiff-tag:hover {
+  opacity: 0.7;
+}
+
+/* New class for horizontal side panel layout */
+.side-panel-horizontal {
+  display: flex; /* Use flexbox to layout items horizontally */
+  flex-wrap: wrap; /* Allow items to wrap if needed */
+  justify-content: space-around; /* Space out items evenly */
+  padding: 10px;
+  margin-top: 20px; /* Add some space above the side panel */
+  margin-left: -13px;
+}
+
+/* Adjustments for panel items to display in a row */
+.side-panel-horizontal .panel-item {
+  flex: 1 1 25%; /* This makes each item take up a quarter of the horizontal space */
+  max-width: calc(25% - 20px); /* Adjusts for margin */
+  box-sizing: border-box; /* Includes padding and border in the element's total width and height */
+  margin: 10px; /* Add some space around items */
+  display: flex; /* Use flex to manage content inside each panel item */
+  align-items: center; /* Centers items vertically inside the panel item */
+}
+
+/* Directly style .panel-content for horizontal layout */
+.side-panel-horizontal .panel-content {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between; /* Adjust spacing to use available space */
+  width: 100%; /* Ensure it takes full width of its parent */
+}
+
+.histogram-and-legend-container-contents {
+  flex-grow: 1;
+  width: 100%;
+}
+
+.download-section {
+  flex-direction: column;
+  flex-wrap: wrap;
+}
+
+.round-well-info {
+  width: 100%;
+}
+
+.polar-plot-container {
+  width: 100%;
+}
+.round-well-info .well {
+  padding: auto;
+}
+
+.deleter {
+  width: 100%;
+}
+
+.polar-plot-description p {
+  font-size: 0.9em;
+  color: var(
+    --color-primary-dark
+  ); /* Assuming this is a darker shade for text */
+  padding: 10px;
+  background-color: var(--color-background);
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-top: 20px;
+}
+
+/* Adjust for larger screens */
+@media (min-width: 1024px) {
+  .side-panel-horizontal {
+    width: 100%;
+  }
+}
+
+/* New Independent Scrolling Styles */
+.sider-container {
+  width: 300px;
+  height: 100vh;
+  overflow-y: auto;
+  position: relative;
+  z-index: 1;
+  padding-bottom: 60px;
+}
+
+.content-container {
+  flex: 1;
+  height: 100vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+/* Ensure proper collapse panel behavior */
+.ant-collapse-content {
+  overflow: visible !important;
+}
+
+/* Add these new styles for the file listing container */
+.file-listing {
+  padding: 8px 0;
+  cursor: pointer;
+  color: #1890ff;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  font-size: 0.9em;
+  line-height: 1.4;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+}
+
+.file-listing:hover {
+  background-color: #f5f5f5;
+}
+
+/* Style for the file name text */
+.file-name {
+  white-space: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 10px;
+  width: 100%;
+}
+
+/* Update Ant Design's collapse panel styles */
+.ant-collapse-content-box {
+  padding: 0 !important;
+}
+
+.ant-collapse-header {
+  font-weight: 500;
+  background-color: #fafafa;
+}
+
+/* Add styles for the body part headers */
+.body-part-header {
+  font-weight: 500;
+  padding: 8px 12px;
+  background-color: #f5f5f5;
+  border-bottom: 1px solid #e8e8e8;
+  margin: 0;
+}
+
+/* Add tooltip styles for long file names */
+.file-name-tooltip {
+  max-width: 300px;
+  word-wrap: break-word;
+  visibility: hidden;
+  background-color: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  text-align: center;
+  padding: 5px 10px;
+  border-radius: 4px;
+  position: absolute;
+  z-index: 1500;
+  font-size: 0.85em;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.file-listing:hover .file-name-tooltip {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Add styles for optional file icon */
+.file-icon {
+  min-width: 16px;
+  margin-right: 8px;
+  color: #1890ff;
+}
+
+/* Ensure the sider content doesn't overflow */
+.ant-layout-sider-children {
+  overflow-x: hidden;
+}
+
+/* Style scrollbar for better visibility */
+.ant-layout-sider::-webkit-scrollbar {
+  width: 6px;
+}
+
+.ant-layout-sider::-webkit-scrollbar-thumb {
+  background-color: #d9d9d9;
+  border-radius: 3px;
+}
+
+.ant-layout-sider::-webkit-scrollbar-track {
+  background-color: #f0f0f0;
+}
+
+.plane-player-controls {
+  background: #fff;
+  border-radius: 8px;
+  padding: 15px;
+  margin: 10px 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.plane-player-controls .ant-slider {
+  margin: 10px 0;
+}
+
+.plane-player-controls .ant-row {
+  margin: 10px 0;
+}
+
+.plane-player-controls h4 {
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.planar-slice-player {
+  background: #fff;
+  border-radius: 8px;
+  transition: height 0.3s ease;
+}
+
+.player-header {
+  user-select: none;
+}
+
+/* Base styles for planar controls container */
+.planar-controls-container {
+  position: absolute;
+  bottom: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(95%, 808px);
+  max-width: calc(100vw - 40px);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(4px);
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 16px;
+  z-index: 100;
+  transition: all 0.3s ease;
+}
+
+.planar-slice-player {
+  width: 100%;
+  max-width: 100%;
+  background: #fff;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+/* Small screens */
+@media (max-width: 576px) {
+  .planar-controls-container {
+    width: 95%;
+    bottom: 5%;
+    padding: 12px;
+  }
+
+  .planar-slice-player {
+    font-size: 0.9em;
+  }
+
+  .planar-slice-player .ant-row {
+    margin: 8px 0;
+  }
+
+  .planar-slice-player .ant-btn {
+    padding: 4px 8px;
+    font-size: 0.9em;
+  }
+}
+
+/* Medium screens */
+@media (min-width: 577px) and (max-width: 992px) {
+  .planar-controls-container {
+    width: 90%;
+    bottom: 7%;
+  }
+}
+
+/* Large screens */
+@media (min-width: 993px) {
+  .planar-controls-container {
+    width: min(85%, 808px);
+  }
+}
+
+/* Handle touch devices */
+@media (hover: none) {
+  .planar-controls-container {
+    touch-action: none;
+  }
+
+  .planar-slice-player input[type="number"] {
+    font-size: 16px; /* Prevents iOS zoom on focus */
   }
 }
