@@ -1992,7 +1992,7 @@ const VolumeViewer = () => {
                             <span>
                               {currentVolume.imageInfo &&
                               currentVolume.imageInfo.physicalPixelSize
-                                ? `${currentVolume.imageMetadata["Physical size per pixel"]?.x} × ${currentVolume.imageMetadata["Physical size per pixel"]?.y} × ${currentVolume.imageMetadata["Physical size per pixel"]?.y}`
+                                ? `${currentVolume.imageMetadata["Physical size per pixel"]?.x} × ${currentVolume.imageMetadata["Physical size per pixel"]?.y} × ${currentVolume.imageMetadata["Physical size per pixel"]?.z}`
                                 : "N/A"}
                             </span>
                           </div>
