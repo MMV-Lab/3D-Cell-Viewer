@@ -68,6 +68,7 @@ import {
 } from "./constants";
 import PlanarSlicePlayer from "./PlanarSlicePlayer";
 import FilesList from "./FilesList";
+import ThreePointGammaSlider from "./ThreePointGammaSlider";
 // Utility function to concatenate arrays
 const concatenateArrays = (arrays) => {
   const totalLength = arrays.reduce((acc, arr) => acc + arr.length, 0);
@@ -1634,57 +1635,10 @@ const VolumeViewer = () => {
                   }
                   key="gamma"
                 >
-                  <Row>
-                    <Col span={8}>Min</Col>
-                    <Col span={16}>
-                      <Slider
-                        min={0}
-                        max={255}
-                        value={settings.levels[0]}
-                        onChange={(value) =>
-                          updateSetting("levels", [
-                            value,
-                            settings.levels[1],
-                            settings.levels[2],
-                          ])
-                        }
-                      />
-                    </Col>
-                  </Row>
-                  <Row>
-                    <Col span={8}>Mid</Col>
-                    <Col span={16}>
-                      <Slider
-                        min={0}
-                        max={255}
-                        value={settings.levels[1]}
-                        onChange={(value) =>
-                          updateSetting("levels", [
-                            settings.levels[0],
-                            value,
-                            settings.levels[2],
-                          ])
-                        }
-                      />
-                    </Col>
-                  </Row>
-                  <Row>
-                    <Col span={8}>Max</Col>
-                    <Col span={16}>
-                      <Slider
-                        min={0}
-                        max={255}
-                        value={settings.levels[2]}
-                        onChange={(value) =>
-                          updateSetting("levels", [
-                            settings.levels[0],
-                            settings.levels[1],
-                            value,
-                          ])
-                        }
-                      />
-                    </Col>
-                  </Row>
+                  <ThreePointGammaSlider
+                    value={settings.levels}
+                    onChange={(values) => updateSetting("levels", values)}
+                  />
                 </Collapse.Panel>
 
                 {/* Exposure */}
