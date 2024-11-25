@@ -239,7 +239,7 @@ const VolumeViewer = () => {
     view3D.updateLuts(volume);
 
     if (volume.isLoaded()) {
-      console.log("Volume " + volume.name + " is loaded");
+      // console.log("Volume " + volume.name + " is loaded");
     }
     view3D.redraw();
   };
@@ -247,22 +247,22 @@ const VolumeViewer = () => {
   // Modify your onVolumeCreated function
   const onVolumeCreated = (volume) => {
     if (!volume || !volume.imageInfo) {
-      console.error("Invalid volume data");
+      // console.error("Invalid volume data");
       return;
     }
 
-    console.log("Volume created with info:", volume.imageInfo);
+    // console.log("Volume created with info:", volume.imageInfo);
 
     volumeRef.current = volume;
     view3D.removeAllVolumes();
 
     // Log the dimensions specifically
-    console.log("Dimensions:", {
-      sizeX: volume.imageInfo.sizeX,
-      sizeY: volume.imageInfo.sizeY,
-      sizeZ: volume.imageInfo.sizeZ,
-      sizeC: volume.imageInfo.sizeC,
-    });
+    // console.log("Dimensions:", {
+    //   sizeX: volume.imageInfo.sizeX,
+    //   sizeY: volume.imageInfo.sizeY,
+    //   sizeZ: volume.imageInfo.sizeZ,
+    //   sizeC: volume.imageInfo.sizeC,
+    // });
 
     // Initialize channels with persisted settings if available
     const channelNames = volume.imageInfo.channelNames || [];
@@ -378,10 +378,10 @@ const VolumeViewer = () => {
 
   const loadVolume = async (loadSpec, loader) => {
     const volume = await loader.createVolume(loadSpec, onChannelDataArrived);
-    console.log("Loaded volume metadata:", volume.imageInfo);
+    // console.log("Loaded volume metadata:", volume.imageInfo);
     onVolumeCreated(volume);
 
-    console.log(volume.imageInfo, volume.imageInfo.times);
+    // console.log(volume.imageInfo, volume.imageInfo.times);
     // Set total frames based on the volume's metadata (assuming 'times' represents the number of frames)
     setTotalFrames(volume.imageInfo.times || 1);
     await loader.loadVolumeData(volume);
@@ -413,7 +413,7 @@ const VolumeViewer = () => {
       setLoader(loader);
       await loadVolume(loadSpec, loader);
     } catch (error) {
-      console.error("Error loading volume:", error);
+      // console.error("Error loading volume:", error);
       // You might want to show an error message to the user here
     } finally {
       setIsLoading(false);
@@ -466,7 +466,7 @@ const VolumeViewer = () => {
     setSelectedFile(fileName);
 
     const fileUrl = `${API_URL}/${category}/${fileName}`;
-    console.log("Loading file:", fileUrl);
+    // console.log("Loading file:", fileUrl);
 
     await loadVolumeFromServer(fileUrl);
   };
@@ -616,7 +616,7 @@ const VolumeViewer = () => {
     view3D.updateMaskAlpha(currentVolume, alphaValue);
     view3D.updateActiveChannels(currentVolume);
     // view3D.redraw();
-    console.log("maskAlpha", settings.maskAlpha);
+    // console.log("maskAlpha", settings.maskAlpha);
   }, [settings.maskAlpha]);
 
   useEffect(() => {
@@ -640,14 +640,14 @@ const VolumeViewer = () => {
       view3D.updateLights(lights);
       view3D.updateActiveChannels(currentVolume);
       view3D.redraw();
-      console.log([
-        skyTopColor,
-        skyTopIntensity,
-        skyMidColor,
-        skyMidIntensity,
-        skyBotColor,
-        skyBotIntensity,
-      ]);
+      // console.log([
+      //   skyTopColor,
+      //   skyTopIntensity,
+      //   skyMidColor,
+      //   skyMidIntensity,
+      //   skyBotColor,
+      //   skyBotIntensity,
+      // ]);
     }
   }, [
     skyTopColor,
@@ -673,7 +673,7 @@ const VolumeViewer = () => {
       view3D.updateActiveChannels(currentVolume);
       view3D.redraw();
     }
-    console.log([lightColor, lightIntensity, lightTheta, lightPhi]);
+    // console.log([lightColor, lightIntensity, lightTheta, lightPhi]);
   }, [lightColor, lightIntensity, lightTheta, lightPhi]);
 
   // Effect for handling isosurface enable/disable
@@ -923,22 +923,8 @@ const VolumeViewer = () => {
     if (mode === "3D") {
       // Reset scroll flag when switching back to 3D
       setHasScrolledOnce(false);
-
-      // Restore original scroll position
-      setTimeout(() => {
-        const scrollContainer = document.querySelector(".content-container");
-        if (scrollContainer) {
-          scrollContainer.scrollTo({
-            top: originalScrollPosition,
-            behavior: "smooth",
-          });
-        } else {
-          window.scrollTo({
-            top: originalScrollPosition,
-            behavior: "smooth",
-          });
-        }
-      }, 300);
+      // Remove padding when returning to 3D
+      viewerRef.current.style.paddingBottom = "0";
 
       const fullClipRegion = {
         xmin: 0,
@@ -961,17 +947,15 @@ const VolumeViewer = () => {
       );
 
       view3D.setCameraMode(mode);
-
-      const renderMode = isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH;
-      view3D.setVolumeRenderMode(renderMode);
+      view3D.setVolumeRenderMode(
+        isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH,
+      );
       view3D.setMaxProjectMode(currentVolume, false);
 
+      // Restore 3D settings
       view3D.updateDensity(currentVolume, settings.density / 100);
       view3D.updateExposure(settings.brightness / 100);
-      if (currentVolume) {
-        view3D.updateMaskAlpha(currentVolume, 1 - settings.maskAlpha / 100);
-      }
-
+      view3D.updateMaskAlpha(currentVolume, 1 - settings.maskAlpha / 100);
       view3D.setRayStepSizes(currentVolume, primaryRay, secondaryRay);
 
       channels.forEach((channel, index) => {
@@ -988,7 +972,11 @@ const VolumeViewer = () => {
         }
       });
     } else {
-      // 2D modes (X, Y, Z)
+      // Add padding for the player in 2D modes
+      if (viewerRef.current) {
+        viewerRef.current.style.paddingBottom = "80px";
+      }
+
       const defaultClipRegion = {
         xmin: 0,
         xmax: 1,
@@ -1025,6 +1013,7 @@ const VolumeViewer = () => {
       view3D.setVolumeRenderMode(RENDERMODE_RAYMARCH);
       view3D.setMaxProjectMode(currentVolume, false);
 
+      // Set optimal 2D view settings
       view3D.updateDensity(currentVolume, 0.5);
       view3D.updateExposure(0.7);
       view3D.updateMaskAlpha(currentVolume, 0.5);
@@ -1043,37 +1032,6 @@ const VolumeViewer = () => {
           }
         }
       });
-
-      // Only perform scroll if switching from 3D to 2D and haven't scrolled yet
-      if (previousMode === "3D" && !hasScrolledOnce) {
-        // Store the current scroll position before scrolling
-        const scrollContainer = document.querySelector(".content-container");
-        const currentPosition = scrollContainer
-          ? scrollContainer.scrollTop
-          : window.pageYOffset;
-        setOriginalScrollPosition(currentPosition);
-
-        setTimeout(() => {
-          const viewportHeight = window.innerHeight;
-          const scrollAmount = Math.min(50, viewportHeight * 0.03);
-
-          if (scrollContainer) {
-            scrollContainer.style.overflow = "auto";
-            scrollContainer.scrollBy({
-              top: scrollAmount,
-              behavior: "smooth",
-            });
-          } else {
-            window.scrollBy({
-              top: scrollAmount,
-              behavior: "smooth",
-            });
-          }
-
-          // Set the flag to true after first scroll
-          setHasScrolledOnce(true);
-        }, 300);
-      }
     }
 
     setPersistentSettings((prev) => ({
@@ -1420,7 +1378,16 @@ const VolumeViewer = () => {
 
     return `${roundedValue}`;
   };
-  console.log(currentVolume?.imageMetadata);
+  // console.log(currentVolume?.imageMetadata);
+
+  const getDimensionOrder = (metadata) => {
+    let order = [];
+    if (metadata["Time series frames"] > 1) order.push("T");
+    if (metadata.Channels > 1) order.push("C");
+    order.push("Z", "Y", "X");
+    return order.join("");
+  };
+
   return (
     <Layout style={{ height: "100vh" }}>
       <div
@@ -2086,68 +2053,210 @@ const VolumeViewer = () => {
               }
               key="metadata"
             >
-              {currentVolume && (
+              {currentVolume && currentVolume.imageMetadata && (
                 <div className="metadata-content">
-                  <h4>Volume Information</h4>
-                  <div className="metadata-item">
-                    <label>Name:</label>
-                    <span>{currentVolume.name}</span>
+                  <Tooltip title={currentVolume.name}>
+                    <div className="name-value">{currentVolume.name}</div>
+                  </Tooltip>
+
+                  <div className="dimension-order">
+                    Dimension order:{" "}
+                    {(() => {
+                      const order = [];
+                      if (currentVolume.imageMetadata["Time series frames"] > 1)
+                        order.push("T");
+                      if (currentVolume.imageMetadata.Channels > 1)
+                        order.push("C");
+                      order.push("Z", "Y", "X");
+                      return order.join("");
+                    })()}
                   </div>
-                  {currentVolume.imageInfo && (
-                    <>
-                      <div className="metadata-item">
-                        <label>Dimensions:</label>
-                        <span>
-                          {currentVolume.imageInfo.volumeSize
-                            ? `${roundToSignificantFigure(currentVolume.imageInfo.volumeSize.x)} × ${roundToSignificantFigure(currentVolume.imageInfo.volumeSize.y)} × ${roundToSignificantFigure(currentVolume.imageInfo.volumeSize.z)}`
-                            : "N/A"}
-                        </span>
+
+                  <Collapse defaultActiveKey={["1"]} ghost>
+                    <Collapse.Panel header="Dimensions (voxels)" key="1">
+                      <div className="dimension-group">
+                        <div className="dim-row">
+                          <span>x</span>
+                          <span>
+                            {currentVolume.imageMetadata.Dimensions.x}
+                          </span>
+                        </div>
+                        <div className="dim-row">
+                          <span>y</span>
+                          <span>
+                            {currentVolume.imageMetadata.Dimensions.y}
+                          </span>
+                        </div>
+                        <div className="dim-row">
+                          <span>z</span>
+                          <span>
+                            {currentVolume.imageMetadata.Dimensions.z}
+                          </span>
+                        </div>
                       </div>
-                      <div className="metadata-item">
-                        <label>Physical Size:</label>
-                        <span>
-                          {currentVolume.physicalSize
-                            ? `${roundToSignificantFigure(currentVolume.physicalSize.x)} × ${roundToSignificantFigure(currentVolume.physicalSize.y)} × ${roundToSignificantFigure(currentVolume.physicalSize.z)} ${currentVolume.physicalUnitSymbol || "units"}`
-                            : "N/A"}
-                        </span>
+                    </Collapse.Panel>
+
+                    <Collapse.Panel
+                      header="Original dimensions (voxels)"
+                      key="2"
+                    >
+                      <div className="dimension-group">
+                        <div className="dim-row">
+                          <span>x</span>
+                          <span>
+                            {
+                              currentVolume.imageMetadata["Original dimensions"]
+                                .x
+                            }
+                          </span>
+                        </div>
+                        <div className="dim-row">
+                          <span>y</span>
+                          <span>
+                            {
+                              currentVolume.imageMetadata["Original dimensions"]
+                                .y
+                            }
+                          </span>
+                        </div>
+                        <div className="dim-row">
+                          <span>z</span>
+                          <span>
+                            {
+                              currentVolume.imageMetadata["Original dimensions"]
+                                .z
+                            }
+                          </span>
+                        </div>
                       </div>
-                      <div className="metadata-item">
-                        <label>Channels:</label>
-                        <span>
-                          {currentVolume.imageMetadata?.Channels || "N/A"}
-                        </span>
+                    </Collapse.Panel>
+
+                    <Collapse.Panel header="Physical size (μm)" key="3">
+                      <div className="dimension-group">
+                        <div className="dim-row">
+                          <span>x</span>
+                          <span>
+                            {currentVolume.imageMetadata["Physical size"].x}
+                          </span>
+                        </div>
+                        <div className="dim-row">
+                          <span>y</span>
+                          <span>
+                            {currentVolume.imageMetadata["Physical size"].y}
+                          </span>
+                        </div>
+                        <div className="dim-row">
+                          <span>z</span>
+                          <span>
+                            {currentVolume.imageMetadata["Physical size"].z}
+                          </span>
+                        </div>
                       </div>
-                      {currentVolume.imageMetadata && (
-                        <>
-                          <div className="metadata-item">
-                            <label>Original Dimensions:</label>
-                            <span>
-                              {currentVolume.imageMetadata.Dimensions
-                                ? `${roundToSignificantFigure(currentVolume.imageMetadata.Dimensions.x)} × ${roundToSignificantFigure(currentVolume.imageMetadata.Dimensions.y)} × ${roundToSignificantFigure(currentVolume.imageMetadata.Dimensions.z)}`
-                                : "N/A"}
-                            </span>
-                          </div>
-                          <div className="metadata-item">
-                            <label>Physical Size per Pixel:</label>
-                            <span>
-                              {currentVolume.imageInfo &&
-                              currentVolume.imageInfo.physicalPixelSize
-                                ? `${currentVolume.imageMetadata["Physical size per pixel"]?.x} × ${currentVolume.imageMetadata["Physical size per pixel"]?.y} × ${currentVolume.imageMetadata["Physical size per pixel"]?.z}`
-                                : "N/A"}
-                            </span>
-                          </div>
-                          <div className="metadata-item">
-                            <label>Time Series Frames:</label>
-                            <span>
-                              {currentVolume.imageMetadata[
-                                "Time series frames"
-                              ] || "N/A"}
-                            </span>
-                          </div>
-                        </>
-                      )}
-                    </>
-                  )}
+                    </Collapse.Panel>
+
+                    <Collapse.Panel
+                      header="Physical size per pixel (μm)"
+                      key="4"
+                    >
+                      <div className="dimension-group">
+                        <div className="dim-row">
+                          <span>x</span>
+                          <span>
+                            {
+                              currentVolume.imageMetadata[
+                                "Physical size per pixel"
+                              ].x
+                            }
+                          </span>
+                        </div>
+                        <div className="dim-row">
+                          <span>y</span>
+                          <span>
+                            {
+                              currentVolume.imageMetadata[
+                                "Physical size per pixel"
+                              ].y
+                            }
+                          </span>
+                        </div>
+                        <div className="dim-row">
+                          <span>z</span>
+                          <span>
+                            {
+                              currentVolume.imageMetadata[
+                                "Physical size per pixel"
+                              ].z
+                            }
+                          </span>
+                        </div>
+                      </div>
+                    </Collapse.Panel>
+                  </Collapse>
+
+                  <div className="info-footer">
+                    <div className="info-row">
+                      <div>
+                        Channels: {currentVolume.imageMetadata.Channels}
+                      </div>
+                      <div>
+                        Time series frames:{" "}
+                        {currentVolume.imageMetadata["Time series frames"]}
+                      </div>
+                    </div>
+                    {currentVolume.imageMetadata.subresolutionLevels > 1 && (
+                      <div className="resolution-info">
+                        Subresolution levels:{" "}
+                        {currentVolume.imageMetadata.subresolutionLevels}
+                      </div>
+                    )}
+                  </div>
+
+                  <style jsx>{`
+                    .metadata-content {
+                      padding: 8px;
+                      color: #666;
+                    }
+                    .name-value {
+                      word-wrap: break-word;
+                      padding: 8px 24px;
+                      font-weight: 500;
+                    }
+                    .dimension-order {
+                      padding: 0 24px 8px;
+                      font-size: 0.9em;
+                      color: #888;
+                    }
+                    .dimension-group {
+                      padding-left: 24px;
+                    }
+                    .dim-row {
+                      display: flex;
+                      justify-content: space-between;
+                      padding: 4px 0;
+                    }
+                    .info-footer {
+                      padding: 8px 24px;
+                      border-top: 1px solid #eee;
+                      margin-top: 8px;
+                    }
+                    .info-row {
+                      display: flex;
+                      justify-content: space-between;
+                      padding: 4px 0;
+                    }
+                    .resolution-info {
+                      padding: 4px 0;
+                      color: #888;
+                    }
+                    :global(
+                        .ant-collapse-ghost
+                          > .ant-collapse-item
+                          > .ant-collapse-content
+                          > .ant-collapse-content-box
+                      ) {
+                      padding: 0;
+                    }
+                  `}</style>
                 </div>
               )}
             </TabPane>

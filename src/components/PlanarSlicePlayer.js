@@ -268,24 +268,25 @@ const PlanarSlicePlayer = ({
       </div>
       <style jsx>{`
         .planar-slice-player-horizontal {
-          position: absolute;
-          bottom: 16px;
+          position: fixed;
+          bottom: 0;
           left: 0;
           right: 0;
           height: 64px;
           background: white;
-          border: 1px solid #e0e0e0;
+          border-top: 1px solid #e0e0e0;
           box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-          z-index: 100;
-          margin-bottom: 0;
+          z-index: 1000;
+          padding: 0 16px;
         }
 
         .controls-container {
           display: flex;
           align-items: center;
-          padding: 0 16px;
           height: 100%;
           gap: 16px;
+          max-width: 1400px;
+          margin: 0 auto;
         }
 
         .axis-label {
