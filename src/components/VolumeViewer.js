@@ -32,6 +32,7 @@ import {
   Select,
   Input,
   Spin,
+  Tooltip,
 } from "antd";
 import {
   Settings,
@@ -196,6 +197,8 @@ const VolumeViewer = () => {
     defaultIsovalue: 128,
     defaultOpacity: 1.0,
   });
+  const [hasScrolledOnce, setHasScrolledOnce] = useState(false);
+  const [originalScrollPosition, setOriginalScrollPosition] = useState(0);
 
   const densitySliderToView3D = (density) => density / 50.0;
 
@@ -912,10 +915,31 @@ const VolumeViewer = () => {
   };
 
   const setCameraModeHandler = (mode) => {
+    const previousMode = cameraMode;
     setCameraMode(mode);
 
-    // Reset clip region when switching to 3D mode
-    if (mode === "3D" && currentVolume) {
+    if (!currentVolume || !view3D) return;
+
+    if (mode === "3D") {
+      // Reset scroll flag when switching back to 3D
+      setHasScrolledOnce(false);
+
+      // Restore original scroll position
+      setTimeout(() => {
+        const scrollContainer = document.querySelector(".content-container");
+        if (scrollContainer) {
+          scrollContainer.scrollTo({
+            top: originalScrollPosition,
+            behavior: "smooth",
+          });
+        } else {
+          window.scrollTo({
+            top: originalScrollPosition,
+            behavior: "smooth",
+          });
+        }
+      }, 300);
+
       const fullClipRegion = {
         xmin: 0,
         xmax: 1,
@@ -924,6 +948,7 @@ const VolumeViewer = () => {
         zmin: 0,
         zmax: 1,
       };
+
       setClipRegion(fullClipRegion);
       view3D.updateClipRegion(
         currentVolume,
@@ -934,15 +959,130 @@ const VolumeViewer = () => {
         fullClipRegion.zmin,
         fullClipRegion.zmax,
       );
+
+      view3D.setCameraMode(mode);
+
+      const renderMode = isPT ? RENDERMODE_PATHTRACE : RENDERMODE_RAYMARCH;
+      view3D.setVolumeRenderMode(renderMode);
+      view3D.setMaxProjectMode(currentVolume, false);
+
+      view3D.updateDensity(currentVolume, settings.density / 100);
+      view3D.updateExposure(settings.brightness / 100);
+      if (currentVolume) {
+        view3D.updateMaskAlpha(currentVolume, 1 - settings.maskAlpha / 100);
+      }
+
+      view3D.setRayStepSizes(currentVolume, primaryRay, secondaryRay);
+
+      channels.forEach((channel, index) => {
+        if (currentVolume) {
+          view3D.setVolumeChannelEnabled(currentVolume, index, channel.enabled);
+          if (channel.enabled) {
+            view3D.setVolumeChannelOptions(currentVolume, index, {
+              color: channel.color,
+              opacity: 1.0,
+              brightness: 1.2,
+              contrast: 1.1,
+            });
+          }
+        }
+      });
+    } else {
+      // 2D modes (X, Y, Z)
+      const defaultClipRegion = {
+        xmin: 0,
+        xmax: 1,
+        ymin: 0,
+        ymax: 1,
+        zmin: 0,
+        zmax: 1,
+      };
+
+      const sliceThickness = 0.01;
+      if (mode === "X") {
+        defaultClipRegion.xmin = 0;
+        defaultClipRegion.xmax = sliceThickness;
+      } else if (mode === "Y") {
+        defaultClipRegion.ymin = 0;
+        defaultClipRegion.ymax = sliceThickness;
+      } else if (mode === "Z") {
+        defaultClipRegion.zmin = 0;
+        defaultClipRegion.zmax = sliceThickness;
+      }
+
+      setClipRegion(defaultClipRegion);
+      view3D.updateClipRegion(
+        currentVolume,
+        defaultClipRegion.xmin,
+        defaultClipRegion.xmax,
+        defaultClipRegion.ymin,
+        defaultClipRegion.ymax,
+        defaultClipRegion.zmin,
+        defaultClipRegion.zmax,
+      );
+
+      view3D.setCameraMode(mode);
+      view3D.setVolumeRenderMode(RENDERMODE_RAYMARCH);
+      view3D.setMaxProjectMode(currentVolume, false);
+
+      view3D.updateDensity(currentVolume, 0.5);
+      view3D.updateExposure(0.7);
+      view3D.updateMaskAlpha(currentVolume, 0.5);
+      view3D.setRayStepSizes(currentVolume, 1, 1);
+
+      channels.forEach((channel, index) => {
+        if (currentVolume) {
+          view3D.setVolumeChannelEnabled(currentVolume, index, channel.enabled);
+          if (channel.enabled) {
+            view3D.setVolumeChannelOptions(currentVolume, index, {
+              color: channel.color,
+              opacity: 1.0,
+              brightness: 1.2,
+              contrast: 1.1,
+            });
+          }
+        }
+      });
+
+      // Only perform scroll if switching from 3D to 2D and haven't scrolled yet
+      if (previousMode === "3D" && !hasScrolledOnce) {
+        // Store the current scroll position before scrolling
+        const scrollContainer = document.querySelector(".content-container");
+        const currentPosition = scrollContainer
+          ? scrollContainer.scrollTop
+          : window.pageYOffset;
+        setOriginalScrollPosition(currentPosition);
+
+        setTimeout(() => {
+          const viewportHeight = window.innerHeight;
+          const scrollAmount = Math.min(50, viewportHeight * 0.03);
+
+          if (scrollContainer) {
+            scrollContainer.style.overflow = "auto";
+            scrollContainer.scrollBy({
+              top: scrollAmount,
+              behavior: "smooth",
+            });
+          } else {
+            window.scrollBy({
+              top: scrollAmount,
+              behavior: "smooth",
+            });
+          }
+
+          // Set the flag to true after first scroll
+          setHasScrolledOnce(true);
+        }, 300);
+      }
     }
 
-    view3D.setCameraMode(mode);
     setPersistentSettings((prev) => ({
       ...prev,
       mode: mode,
     }));
 
-    // Force a redraw
+    view3D.updateActiveChannels(currentVolume);
+    view3D.updateLuts(currentVolume);
     view3D.redraw();
   };
 
@@ -2028,19 +2168,22 @@ const VolumeViewer = () => {
           <div
             id="volume-viewer"
             ref={viewerRef}
-            style={{ width: "100%", height: "100vh", position: "relative" }}
+            style={{
+              width: "100%",
+              height: "100vh",
+              position: "relative",
+              paddingBottom: cameraMode !== "3D" ? "80px" : "0", // Add space for the player
+            }}
           >
             {/* Planar slice player */}
             {cameraMode !== "3D" && currentVolume && (
-              <div className="planar-controls-container">
-                <PlanarSlicePlayer
-                  currentVolume={currentVolume}
-                  cameraMode={cameraMode}
-                  updateClipRegion={handleClipRegionUpdate}
-                  clipRegion={clipRegion}
-                  onSliceChange={handleSliceChange}
-                />
-              </div>
+              <PlanarSlicePlayer
+                currentVolume={currentVolume}
+                cameraMode={cameraMode}
+                updateClipRegion={handleClipRegionUpdate}
+                clipRegion={clipRegion}
+                onSliceChange={handleSliceChange}
+              />
             )}
           </div>
         </Spin>
