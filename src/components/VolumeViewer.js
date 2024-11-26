@@ -69,6 +69,7 @@ import {
 import PlanarSlicePlayer from "./PlanarSlicePlayer";
 import FilesList from "./FilesList";
 import ThreePointGammaSlider from "./ThreePointGammaSlider";
+import ClipRegionSlider from "./ClipRegionSlider";
 // Utility function to concatenate arrays
 const concatenateArrays = (arrays) => {
   const totalLength = arrays.reduce((acc, arr) => acc + arr.length, 0);
@@ -1112,9 +1113,35 @@ const VolumeViewer = () => {
     });
   };
 
-  const updateClipRegion = (key, value) => {
-    const updatedClipRegion = { ...clipRegion, [key]: value };
-    setClipRegion(updatedClipRegion);
+  const updateClipRegion = (axis, values) => {
+    const [min, max] = values;
+    const updates = {};
+
+    if (axis === "X") {
+      updates.xmin = min;
+      updates.xmax = max;
+    } else if (axis === "Y") {
+      updates.ymin = min;
+      updates.ymax = max;
+    } else if (axis === "Z") {
+      updates.zmin = min;
+      updates.zmax = max;
+    }
+
+    const newClipRegion = { ...clipRegion, ...updates };
+    setClipRegion(newClipRegion);
+
+    if (currentVolume) {
+      view3D.updateClipRegion(
+        currentVolume,
+        newClipRegion.xmin,
+        newClipRegion.xmax,
+        newClipRegion.ymin,
+        newClipRegion.ymax,
+        newClipRegion.zmin,
+        newClipRegion.zmax,
+      );
+    }
   };
 
   const goToFrame = (frame) => {
@@ -1764,78 +1791,30 @@ const VolumeViewer = () => {
                   }
                   key="clipRegion"
                 >
-                  <Row>
-                    <Col span={8}>X Min</Col>
-                    <Col span={16}>
-                      <Slider
-                        min={0}
-                        max={1}
-                        step={0.01}
-                        value={clipRegion.xmin}
-                        onChange={(value) => updateClipRegion("xmin", value)}
-                      />
-                    </Col>
-                  </Row>
-                  <Row>
-                    <Col span={8}>X Max</Col>
-                    <Col span={16}>
-                      <Slider
-                        min={0}
-                        max={1}
-                        step={0.01}
-                        value={clipRegion.xmax}
-                        onChange={(value) => updateClipRegion("xmax", value)}
-                      />
-                    </Col>
-                  </Row>
-                  <Row>
-                    <Col span={8}>Y Min</Col>
-                    <Col span={16}>
-                      <Slider
-                        min={0}
-                        max={1}
-                        step={0.01}
-                        value={clipRegion.ymin}
-                        onChange={(value) => updateClipRegion("ymin", value)}
-                      />
-                    </Col>
-                  </Row>
-                  <Row>
-                    <Col span={8}>Y Max</Col>
-                    <Col span={16}>
-                      <Slider
-                        min={0}
-                        max={1}
-                        step={0.01}
-                        value={clipRegion.ymax}
-                        onChange={(value) => updateClipRegion("ymax", value)}
-                      />
-                    </Col>
-                  </Row>
-                  <Row>
-                    <Col span={8}>Z Min</Col>
-                    <Col span={16}>
-                      <Slider
-                        min={0}
-                        max={1}
-                        step={0.01}
-                        value={clipRegion.zmin}
-                        onChange={(value) => updateClipRegion("zmin", value)}
-                      />
-                    </Col>
-                  </Row>
-                  <Row>
-                    <Col span={8}>Z Max</Col>
-                    <Col span={16}>
-                      <Slider
-                        min={0}
-                        max={1}
-                        step={0.01}
-                        value={clipRegion.zmax}
-                        onChange={(value) => updateClipRegion("zmax", value)}
-                      />
-                    </Col>
-                  </Row>
+                  <div style={{ padding: "10px 0" }}>
+                    {currentVolume && (
+                      <>
+                        <ClipRegionSlider
+                          axis="X"
+                          value={[clipRegion.xmin, clipRegion.xmax]}
+                          onChange={(values) => updateClipRegion("X", values)}
+                          totalSlices={currentVolume.imageMetadata.Dimensions.x}
+                        />
+                        <ClipRegionSlider
+                          axis="Y"
+                          value={[clipRegion.ymin, clipRegion.ymax]}
+                          onChange={(values) => updateClipRegion("Y", values)}
+                          totalSlices={currentVolume.imageMetadata.Dimensions.y}
+                        />
+                        <ClipRegionSlider
+                          axis="Z"
+                          value={[clipRegion.zmin, clipRegion.zmax]}
+                          onChange={(values) => updateClipRegion("Z", values)}
+                          totalSlices={currentVolume.imageMetadata.Dimensions.z}
+                        />
+                      </>
+                    )}
+                  </div>
                 </Collapse.Panel>
 
                 {/* Camera Settings */}
