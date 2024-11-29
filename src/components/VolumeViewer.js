@@ -70,6 +70,7 @@ import PlanarSlicePlayer from "./PlanarSlicePlayer";
 import FilesList from "./FilesList";
 import ThreePointGammaSlider from "./ThreePointGammaSlider";
 import ClipRegionSlider from "./ClipRegionSlider";
+import TransferFunctionEditor from "./TransferFunctionEditor";
 // Utility function to concatenate arrays
 const concatenateArrays = (arrays) => {
   const totalLength = arrays.reduce((acc, arr) => acc + arr.length, 0);
@@ -764,20 +765,26 @@ const VolumeViewer = () => {
       const channelColor =
         currentPresetColors[index % currentPresetColors.length];
 
-      return {
-        name,
-        enabled: index < 3,
-        colorD: channelColor,
-        colorS: [0, 0, 0],
-        colorE: [0, 0, 0],
-        glossiness: 0,
-        window: 1,
-        level: 0.5,
-        isovalue: 128,
-        isosurface: false,
-        brightness: 1.2,
-        contrast: 1.1,
-      };
+        return {
+          name,
+          enabled: index < 3,
+          colorD: channelColor,
+          colorS: [0, 0, 0],
+          colorE: [0, 0, 0],
+          glossiness: 0,
+          window: 1,
+          level: 0.5,
+          isovalue: 128,
+          isosurface: false,
+          brightness: 1.2,
+          contrast: 1.1,
+          // Add these new properties
+          useAdvancedMode: false,
+          controlPoints: [
+            { x: 0, opacity: 0, color: channelColor },
+            { x: 255, opacity: 1, color: channelColor }
+          ]
+        };
     });
 
     setChannels(channelGui);
@@ -891,25 +898,74 @@ const VolumeViewer = () => {
   const updateChannelLut = (index, type) => {
     if (currentVolume) {
       let lut;
-      if (type === "autoIJ") {
-        const [hmin, hmax] = currentVolume.getHistogram(index).findAutoIJBins();
-        lut = new Lut().createFromMinMax(hmin, hmax);
-      } else if (type === "auto0") {
-        const [b, e] = currentVolume.getHistogram(index).findAutoMinMax();
-        lut = new Lut().createFromMinMax(b, e);
-      } else if (type === "bestFit") {
-        const [hmin, hmax] = currentVolume
-          .getHistogram(index)
-          .findBestFitBins();
-        lut = new Lut().createFromMinMax(hmin, hmax);
-      } else if (type === "pct50_98") {
-        const hmin = currentVolume.getHistogram(index).findBinOfPercentile(0.5);
-        const hmax = currentVolume
-          .getHistogram(index)
-          .findBinOfPercentile(0.983);
-        lut = new Lut().createFromMinMax(hmin, hmax);
+      let newRange;
+      let newControlPoints;
+      const histogram = currentVolume.getHistogram(index);
+      const channelColor = channels[index].color;
+  
+      switch(type) {
+        case "autoIJ": {
+          const [hmin, hmax] = histogram.findAutoIJBins();
+          lut = new Lut().createFromMinMax(hmin, hmax);
+          newRange = [hmin, hmax];
+          // Create control points for advanced mode
+          newControlPoints = [
+            { x: 0, opacity: 0, color: channelColor },
+            { x: hmin, opacity: 0, color: channelColor },
+            { x: hmax, opacity: 1, color: channelColor },
+            { x: 255, opacity: 1, color: channelColor }
+          ];
+          break;
+        }
+        case "auto0": {
+          const [hmin, hmax] = histogram.findAutoMinMax();
+          lut = new Lut().createFromMinMax(hmin, hmax);
+          newRange = [hmin, hmax];
+          newControlPoints = [
+            { x: 0, opacity: 0, color: channelColor },
+            { x: hmin, opacity: 0, color: channelColor },
+            { x: hmax, opacity: 1, color: channelColor },
+            { x: 255, opacity: 1, color: channelColor }
+          ];
+          break;
+        }
+        case "bestFit": {
+          const [hmin, hmax] = histogram.findBestFitBins();
+          lut = new Lut().createFromMinMax(hmin, hmax);
+          newRange = [hmin, hmax];
+          newControlPoints = [
+            { x: 0, opacity: 0, color: channelColor },
+            { x: hmin, opacity: 0, color: channelColor },
+            { x: hmax, opacity: 1, color: channelColor },
+            { x: 255, opacity: 1, color: channelColor }
+          ];
+          break;
+        }
+        case "pct50_98": {
+          const hmin = histogram.findBinOfPercentile(0.5);
+          const hmax = histogram.findBinOfPercentile(0.983);
+          lut = new Lut().createFromMinMax(hmin, hmax);
+          newRange = [hmin, hmax];
+          newControlPoints = [
+            { x: 0, opacity: 0, color: channelColor },
+            { x: hmin, opacity: 0, color: channelColor },
+            { x: hmax, opacity: 1, color: channelColor },
+            { x: 255, opacity: 1, color: channelColor }
+          ];
+          break;
+        }
       }
-
+  
+      // Update channel settings
+      const updatedChannels = [...channels];
+      updatedChannels[index] = {
+        ...updatedChannels[index],
+        controlPoints: newControlPoints,
+        rampRange: newRange
+      };
+      setChannels(updatedChannels);
+  
+      // Apply to volume
       currentVolume.setLut(index, lut);
       view3D.updateLuts(currentVolume);
       view3D.redraw();
@@ -1493,6 +1549,47 @@ const VolumeViewer = () => {
                       <div className="channel-header">
                         {channel.name || `Channel ${index + 1}`}
                       </div>
+                      {channel.enabled && (
+                        <div style={{ marginBottom: '16px', padding: '0 8px' }}>
+                          <TransferFunctionEditor 
+                            channelIndex={index}
+                            histogram={currentVolume?.getHistogram(index)}
+                            onLutUpdate={(lut, channelIndex) => {
+                              if (currentVolume) {
+                                currentVolume.setLut(channelIndex, lut);
+                                view3D.updateLuts(currentVolume);
+                                view3D.redraw();
+                              }
+                            }}
+                            useAdvancedMode={channel.useAdvancedMode}
+                            initialControlPoints={channel.controlPoints}
+                            rampRange={channel.rampRange}
+                            channelColor={channel.color}
+                            onRampRangeChange={(newRange) => {
+                              const updatedChannels = [...channels];
+                              updatedChannels[index].rampRange = newRange;
+                              setChannels(updatedChannels);
+                            }}
+                            onControlPointsChange={(newPoints) => {
+                              const updatedChannels = [...channels];
+                              updatedChannels[index].controlPoints = newPoints;
+                              setChannels(updatedChannels);
+                            }}
+                          />
+                          {/* Advanced Mode Toggle */}
+                          <div style={{ marginTop: '8px' }}>
+                            <Switch
+                              checked={channel.useAdvancedMode}
+                              onChange={(checked) => {
+                                const updatedChannels = [...channels];
+                                updatedChannels[index].useAdvancedMode = checked;
+                                setChannels(updatedChannels);
+                              }}
+                              size="small"
+                            /> Advanced Mode
+                          </div>
+                        </div>
+                      )}
                       <Row>
                         <Col span={12}>Enable Channel</Col>
                         <Col span={12}>
@@ -1603,14 +1700,45 @@ const VolumeViewer = () => {
                                 width: "100%",
                               }}
                             >
-                              <Button
-                                size="small"
-                                style={{ flex: 1, minWidth: 0 }}
-                                onClick={() =>
-                                  updateChannelLut(index, "autoIJ")
-                                }
-                              >
-                                Auto IJ
+                            <Button
+                                  size="small"
+                                  style={{ flex: 1, minWidth: 0 }}
+                                  onClick={() => {
+                                    // Get the initial LUT configuration
+                                    const histogram = currentVolume.getHistogram(index);
+                                    // Create a default LUT that maps full intensity range
+                                    const lut = new Lut().createFullRange();
+
+                                    // Reset channel settings to initial state
+                                    const defaultControlPoints = [
+                                      { x: 0, opacity: 0, color: channel.color },
+                                      { x: 255, opacity: 1, color: channel.color }
+                                    ];
+
+                                    const updatedChannels = [...channels];
+                                    updatedChannels[index] = {
+                                      ...updatedChannels[index],
+                                      controlPoints: defaultControlPoints,
+                                      rampRange: [0, 255]
+                                    };
+                                    setChannels(updatedChannels);
+
+                                    // Apply to volume
+                                    currentVolume.setLut(index, lut);
+                                    view3D.updateLuts(currentVolume);
+                                    view3D.redraw();
+                                  }}
+                                >
+                                  None
+                                </Button>
+                                <Button
+                                  size="small"
+                                  style={{ flex: 1, minWidth: 0 }}
+                                  onClick={() =>
+                                    updateChannelLut(index, "autoIJ")
+                                  }
+                                >
+                                  Auto IJ
                               </Button>
                               <Button
                                 size="small"
