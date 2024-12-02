@@ -1576,8 +1576,8 @@ const VolumeViewer = () => {
                               setChannels(updatedChannels);
                             }}
                           />
-                          {/* Advanced Mode Toggle */}
-                          <div style={{ marginTop: '8px' }}>
+                          {/* Advanced Mode Toggle with improved styling */}
+                          <div className="advanced-mode-toggle">
                             <Switch
                               checked={channel.useAdvancedMode}
                               onChange={(checked) => {
@@ -1586,7 +1586,8 @@ const VolumeViewer = () => {
                                 setChannels(updatedChannels);
                               }}
                               size="small"
-                            /> Advanced Mode
+                            />
+                            <span className="advanced-mode-label">Advanced Mode</span>
                           </div>
                         </div>
                       )}

@@ -1512,3 +1512,37 @@ button svg {
   font-size: 14px;
   color: #666;
 }
+
+
+.advanced-mode-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  min-width: 0;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.advanced-mode-label {
+  font-size: 12px;
+  color: #666;
+  margin-left: 4px;
+  flex-shrink: 0; /* Prevents text from wrapping */
+}
+
+/* Responsive adjustments */
+@media (max-width: 400px) {
+  .advanced-mode-toggle {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    padding-right: 8px;
+  }
+}
+
+/* Ensure switch maintains its size */
+:global(.ant-switch) {
+  flex-shrink: 0;
+  min-width: 28px;
+}

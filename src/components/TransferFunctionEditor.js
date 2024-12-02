@@ -1,12 +1,14 @@
+// src/components/TransferFunctionEditor.js
+
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import * as d3 from 'd3';
 import { Lut } from "@aics/volume-viewer";
 
 const MARGIN = { 
-  top: 15,
+  top: 30,    // Increased for title
   right: 10,
   bottom: 35,
-  left: 45
+  left: 55    // Increased for y-axis label and values
 };
 
 const TransferFunctionEditor = ({ 
@@ -14,7 +16,7 @@ const TransferFunctionEditor = ({
   histogram,
   onLutUpdate,
   width = 380,
-  height = 200,
+  height = 220,
   initialControlPoints,
   useAdvancedMode = false,
   channelColor = [255, 255, 255],
@@ -33,21 +35,6 @@ const TransferFunctionEditor = ({
 
   const innerWidth = width - MARGIN.left - MARGIN.right;
   const innerHeight = height - MARGIN.top - MARGIN.bottom;
-
-  // Create gradient definition
-  const createGradientDef = useCallback((points) => {
-    const range = points[points.length - 1].x - points[0].x;
-    return points.map((cp, i) => {
-      const offset = `${((cp.x - points[0].x) / range) * 100}%`;
-      const opacity = Math.min(cp.opacity, 0.9);
-      return <stop 
-        key={i} 
-        stopColor={`rgb(${cp.color.join(',')})`} 
-        stopOpacity={opacity} 
-        offset={offset} 
-      />;
-    });
-  }, []);
 
   // Scale functions
   const xScale = useMemo(() => 
@@ -79,6 +66,21 @@ const TransferFunctionEditor = ({
       .range([innerHeight, 0])
       .nice();
   }, [histogram, innerHeight]);
+
+  // Create gradient definition
+  const createGradientDef = useCallback((points) => {
+    const range = points[points.length - 1].x - points[0].x;
+    return points.map((cp, i) => {
+      const offset = `${((cp.x - points[0].x) / range) * 100}%`;
+      const opacity = Math.min(cp.opacity, 0.9);
+      return <stop 
+        key={i} 
+        stopColor={`rgb(${cp.color.join(',')})`} 
+        stopOpacity={opacity} 
+        offset={offset} 
+      />;
+    });
+  }, []);
 
   // Sync with external changes
   useEffect(() => {
@@ -153,13 +155,6 @@ const TransferFunctionEditor = ({
     const gradientId = `tf-gradient-${channelIndex}`;
     const defs = svg.selectAll('defs').data([null]).join('defs');
     
-    // Create area generator
-    const area = d3.area()
-      .x(d => xScale(d.x))
-      .y0(innerHeight)
-      .y1(d => yScale(d.opacity))
-      .curve(d3.curveLinear);
-
     if (useAdvancedMode) {
       // Set up gradient for advanced mode
       defs.html(`
@@ -171,6 +166,12 @@ const TransferFunctionEditor = ({
       `);
 
       // Draw filled area with gradient
+      const area = d3.area()
+        .x(d => xScale(d.x))
+        .y0(innerHeight)
+        .y1(d => yScale(d.opacity))
+        .curve(d3.curveLinear);
+
       controlGroup.append('path')
         .attr('class', 'gradient-area')
         .attr('d', area(controlPoints))
@@ -236,6 +237,12 @@ const TransferFunctionEditor = ({
         .style('pointer-events', 'none');
 
       // Draw filled area with gradient
+      const area = d3.area()
+        .x(d => xScale(d.x))
+        .y0(innerHeight)
+        .y1(d => yScale(d.opacity))
+        .curve(d3.curveLinear);
+
       controlGroup.append('path')
         .attr('class', 'gradient-area')
         .attr('d', area(rampPoints))
@@ -265,7 +272,8 @@ const TransferFunctionEditor = ({
         .attr('fill', `rgb(${channelColor.join(',')})`)
         .attr('transform', (_, i) => `translate(0,${i === 0 ? -6 : -6})`);
     }
-  }, [controlPoints, internalRampRange, useAdvancedMode, xScale, yScale, channelColor, channelIndex, innerHeight, createGradientDef]);
+  }, [controlPoints, internalRampRange, useAdvancedMode, xScale, yScale, channelColor, channelIndex, innerHeight, createGradientDef, innerWidth]);
+
   // Update LUT
   const updateLut = useCallback(() => {
     const lut = new Lut();
@@ -279,19 +287,13 @@ const TransferFunctionEditor = ({
 
   // Clamp point to valid ranges
   const clampPoint = useCallback((x, y) => {
-    // Clamp x to valid range
     const clampedX = Math.max(0, Math.min(255, x));
-    
-    // Ensure y is non-negative and follows the 0-90 degree constraint
     let clampedY = Math.max(0, Math.min(1, y));
-    
-    // Calculate angle from horizontal (in degrees)
     const angle = Math.atan2(clampedY, clampedX) * (180 / Math.PI);
     
-    // If angle is greater than 90 degrees, adjust y to maintain 90 degree max
     if (angle > 90) {
       clampedY = x * Math.tan(90 * (Math.PI / 180));
-      clampedY = Math.min(1, clampedY); // Ensure it doesn't exceed max opacity
+      clampedY = Math.min(1, clampedY);
     }
     
     return { x: clampedX, y: clampedY };
@@ -305,10 +307,8 @@ const TransferFunctionEditor = ({
     const y = yScale.invert(point[1] - MARGIN.top);
    
     if (useAdvancedMode) {
-      // Only allow points within valid region (first quadrant)
       if (y < 0 || y > 1 || x < 0 || x > 255) return;
    
-      // Check for existing point within click radius
       const existingPointIndex = controlPoints.findIndex(p => 
         Math.abs(xScale(p.x) - (point[0] - MARGIN.left)) < 6 &&
         Math.abs(yScale(p.opacity) - (point[1] - MARGIN.top)) < 6
@@ -335,9 +335,9 @@ const TransferFunctionEditor = ({
       setSelectedPoint(distToMin < distToMax ? 0 : 1);
     }
     setDragging(true);
-   };
+  };
 
-   const handleMouseMove = (event) => {
+  const handleMouseMove = (event) => {
     if (!dragging) return;
     event.preventDefault();
   
@@ -359,7 +359,7 @@ const TransferFunctionEditor = ({
         if (onControlPointsChange) {
           onControlPointsChange(sortedPoints);
         }
-        updateLut(); // Add immediate LUT update
+        updateLut();
       }
     } else if (selectedPoint !== null) {
       const newRange = [...internalRampRange];
@@ -368,7 +368,7 @@ const TransferFunctionEditor = ({
       if (onRampRangeChange) {
         onRampRangeChange(newRange);
       }
-      updateLut(); // Add immediate LUT update
+      updateLut();
     }
   };
 
@@ -407,6 +407,17 @@ const TransferFunctionEditor = ({
     const svg = d3.select(svgRef.current);
     svg.selectAll('*').remove();
 
+    // Add title
+    svg.append('text')
+      .attr('class', 'graph-title')
+      .attr('x', width / 2)
+      .attr('y', MARGIN.top / 2)
+      .attr('text-anchor', 'middle')
+      .attr('dominant-baseline', 'middle')
+      .style('font-size', '14px')
+      .style('font-weight', '500')
+      .text('Intensity-to-Visibility Mapping');
+
     // Create main groups
     svg.append('g')
       .attr('class', 'histogram-group')
@@ -416,7 +427,7 @@ const TransferFunctionEditor = ({
       .attr('class', 'control-points-group')
       .attr('transform', `translate(${MARGIN.left},${MARGIN.top})`);
 
-    // Draw axes with explicit tick values
+    // Draw axes with explicit tick values and adjusted positioning
     const xAxis = d3.axisBottom(xScale)
       .tickValues([0, 50, 100, 150, 200, 255])
       .tickFormat(d3.format('d'))
@@ -429,17 +440,19 @@ const TransferFunctionEditor = ({
       .tickSize(-6)
       .tickPadding(8);
 
+    // Add x-axis
     svg.append('g')
       .attr('transform', `translate(${MARGIN.left},${height - MARGIN.bottom})`)
       .attr('class', 'x-axis')
       .call(xAxis);
 
+    // Add y-axis with adjusted position
     svg.append('g')
       .attr('transform', `translate(${MARGIN.left},${MARGIN.top})`)
       .attr('class', 'y-axis')
       .call(yAxis);
 
-    // Add axis labels
+    // Add axis labels with improved positioning
     svg.append('text')
       .attr('class', 'x-axis-label')
       .attr('text-anchor', 'middle')
@@ -448,27 +461,22 @@ const TransferFunctionEditor = ({
       .style('font-size', '12px')
       .text('Intensity');
 
+    // Adjusted y-axis label positioning
     svg.append('text')
       .attr('class', 'y-axis-label')
       .attr('text-anchor', 'middle')
       .attr('transform', `rotate(-90)`)
       .attr('x', -(MARGIN.top + innerHeight / 2))
-      .attr('y', MARGIN.left / 2)
+      .attr('y', 14)
       .style('font-size', '12px')
       .text('Opacity');
 
-    // Draw histogram and controls
     drawHistogram();
     updateVisualization();
   }, [drawHistogram, updateVisualization, height, xScale, yScale, innerWidth, innerHeight]);
 
   return (
-    <div style={{ 
-      position: 'relative',
-      width: '100%',
-      maxWidth: width,
-      margin: '0 auto'
-    }}>
+    <div className="transfer-function-container">
       <svg
         ref={svgRef}
         width="100%"
@@ -482,138 +490,167 @@ const TransferFunctionEditor = ({
         style={{ cursor: dragging ? 'grabbing' : 'default' }}
       />
       
-      {/* Numeric inputs for ramp mode */}
       {!useAdvancedMode && (
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          marginTop: '8px',
-          padding: `0 ${MARGIN.left}px 0 ${MARGIN.left}px`
-        }}>
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-          }}>
-            <label style={{
-              fontSize: '11px',
-              color: '#666',
-              marginBottom: '4px'
-            }}>
-              Min Intensity (0-255)
-            </label>
+        <div className="intensity-inputs">
+          <div className="input-group">
+            <label>Min Intensity</label>
             <input
               type="number"
               value={Math.round(internalRampRange[0])}
               min={0}
               max={internalRampRange[1]}
               onChange={(e) => handleInputChange(0, Number(e.target.value))}
-              style={{
-                width: '60px',
-                padding: '4px',
-                border: '1px solid #ccc',
-                borderRadius: '4px',
-                textAlign: 'center'
-              }}
             />
           </div>
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-          }}>
-            <label style={{
-              fontSize: '11px',
-              color: '#666',
-              marginBottom: '4px'
-            }}>
-              Max Intensity (0-255)
-            </label>
+          <div className="input-group">
+            <label>Max Intensity</label>
             <input
               type="number"
               value={Math.round(internalRampRange[1])}
               min={internalRampRange[0]}
               max={255}
               onChange={(e) => handleInputChange(1, Number(e.target.value))}
-              style={{
-                width: '60px',
-                padding: '4px',
-                border: '1px solid #ccc',
-                borderRadius: '4px',
-                textAlign: 'center'
-              }}
             />
           </div>
         </div>
       )}
 
       <style jsx>{`
-        .histogram-bar {
+        .transfer-function-container {
+          position: relative;
+          width: 100%;
+          max-width: ${width}px;
+          margin: 0 auto;
+        }
+
+        .intensity-inputs {
+          display: flex;
+          justify-content: space-between;
+          padding: ${MARGIN.left}px ${MARGIN.right}px 0 ${MARGIN.left}px;
+          margin-top: -20px;
+        }
+
+        .input-group {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+        }
+
+        .input-group label {
+          font-size: 11px;
+          color: #666;
+          margin-bottom: 4px;
+        }
+
+        .input-group input {
+          width: 60px;
+          padding: 4px;
+          border: 1px solid #ccc;
+          border-radius: 4px;
+          text-align: center;
+          font-size: 12px;
+          -moz-appearance: textfield;
+        }
+
+        .input-group input::-webkit-inner-spin-button, 
+        .input-group input::-webkit-outer-spin-button { 
+          -webkit-appearance: none; 
+          margin: 0; 
+        }
+
+        .advanced-mode-toggle {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-top: 8px;
+          min-width: 0;
+          flex-wrap: nowrap;
+          white-space: nowrap;
+          padding: 0 ${MARGIN.left}px;
+        }
+
+        .advanced-mode-label {
+          font-size: 12px;
+          color: #666;
+          margin-left: 4px;
+          flex-shrink: 0;
+        }
+
+        /* Adjusted y-axis styling */
+        :global(.y-axis-label) {
+          fill: #666;
+        }
+
+        :global(.y-axis text) {
+          font-size: 10px;
+          transform: translateX(-4px);
+        }
+
+        :global(.y-axis .tick line) {
+          stroke: #ddd;
+          stroke-width: 1;
+        }
+
+        :global(.y-axis path.domain) {
+          stroke: #666;
+        }
+
+        :global(.x-axis text) {
+          font-size: 10px;
+        }
+
+        :global(.x-axis-label) {
+          transform: translateY(${MARGIN.bottom - 8}px);
+        }
+
+        :global(.graph-title) {
+          fill: #333;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        :global(.histogram-bar) {
           shape-rendering: crispEdges;
         }
-        .grid-lines {
+
+        :global(.grid-lines) {
           pointer-events: none;
           opacity: 0.5;
         }
-        .control-point {
+
+        :global(.control-point) {
           cursor: grab;
-          stroke-width: 2.5px;
-          transition: r 0.1s ease;
         }
-        .control-point:hover {
-          r: 7;
-        }
-        .control-point:active {
+
+        :global(.control-point:active) {
           cursor: grabbing;
         }
-        .control-line {
-          pointer-events: none;
-        }
-        .ramp-handle {
+
+        :global(.ramp-handle) {
           cursor: grab;
-          transition: transform 0.1s ease;
         }
-        .ramp-handle:hover {
-          transform: scale(1.2);
-        }
-        .ramp-handle:active {
+
+        :global(.ramp-handle:active) {
           cursor: grabbing;
         }
-        .gradient-area {
-          opacity: 0.85;
-          pointer-events: none;
+
+        /* Responsive adjustments */
+        @media (max-width: 400px) {
+          .advanced-mode-toggle {
+            flex-direction: row;
+            align-items: center;
+            justify-content: flex-start;
+            padding-right: 8px;
+          }
+
+          :global(.graph-title) {
+            font-size: 12px;
+          }
         }
-        .histogram-group {
-          pointer-events: none;
-        }
-        .x-axis-label, .y-axis-label {
-          fill: #666;
-          font-size: 12px;
-        }
-        .ramp-guideline {
-          opacity: 0.6;
-          pointer-events: none;
-        }
-        text {
-          font-size: 11px;
-          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        }
-        .domain, .tick line {
-          stroke: #999;
-          stroke-width: 1.5px;
-        }
-        .x-axis text, .y-axis text {
-          fill: #666;
-        }
-        input[type="number"] {
-          font-size: 12px;
-          text-align: center;
-          -moz-appearance: textfield;
-        }
-        input[type="number"]::-webkit-inner-spin-button, 
-        input[type="number"]::-webkit-outer-spin-button { 
-          -webkit-appearance: none; 
-          margin: 0; 
+
+        /* Ensure switch maintains its size */
+        :global(.ant-switch) {
+          flex-shrink: 0;
+          min-width: 28px;
         }
       `}</style>
     </div>
