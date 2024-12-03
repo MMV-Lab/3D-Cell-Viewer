@@ -38,6 +38,27 @@ git checkout -b "$RELEASE_BRANCH"
 export REACT_APP_API_URL="https://cellmigration.isas.de/api"
 export REACT_APP_UPLOAD_FOLDER="https://cellmigration.isas.de/uploads"
 
+# Create .htaccess file in the public directory
+echo "Creating .htaccess file..."
+cat > "$FRONTEND_DIR/public/.htaccess" << 'EOL'
+# Enable rewrite engine
+RewriteEngine On
+
+# If the requested resource exists as a file or directory, serve it directly
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Otherwise, redirect all requests to index.html
+RewriteRule ^ index.html [QSA,L]
+
+# Set security headers
+Header set X-Content-Type-Options "nosniff"
+Header set X-Frame-Options "SAMEORIGIN"
+Header set X-XSS-Protection "1; mode=block"
+Header set Referrer-Policy "strict-origin-when-cross-origin"
+
+EOL
+
 # Proceed with the frontend deployment
 echo "Starting frontend-only deployment..."
 
@@ -63,6 +84,10 @@ fi
 echo "Copying the React build files to the web server root..."
 sudo rm -rf "$WEB_SERVER_ROOT"/*
 sudo cp -r "$FRONTEND_DIR/build/"* "$WEB_SERVER_ROOT"
+
+# Copy .htaccess file
+echo "Copying .htaccess file..."
+sudo cp "$FRONTEND_DIR/public/.htaccess" "$WEB_SERVER_ROOT/.htaccess"
 
 # Set correct ownership and permissions
 echo "Changing ownership of the web server root directory to www-data user..."
